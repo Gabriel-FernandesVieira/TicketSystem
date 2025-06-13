@@ -12,6 +12,7 @@ import TicketList from './pages/tickets/TicketList';
 import TicketDetail from './pages/tickets/TicketDetail';
 import TicketForm from './pages/tickets/TicketForm';
 import ProjectList from './pages/projects/ProjectList';
+import ProjectForm from './pages/projects/ProjectForm';
 import ExpenseList from './pages/expenses/ExpenseList';
 import UserList from './pages/registrations/UserList';
 
@@ -39,6 +40,8 @@ const AppRoutes: React.FC = () => {
         <Route path="/tickets/:id" element={<TicketDetail />} />
         <Route path="/tickets/:id/edit" element={<TicketForm />} />
         <Route path="/projects" element={<ProjectList />} />
+        <Route path="/projects/new" element={<ProjectForm />} />
+        <Route path="/projects/:id/edit" element={<ProjectForm />} />
         <Route path="/expenses" element={<ExpenseList />} />
         
         {/* Registration Routes - Admin Only */}
