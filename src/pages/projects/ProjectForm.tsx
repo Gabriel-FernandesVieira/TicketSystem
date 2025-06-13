@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, X, Plus, Calendar, User, Building2, AlertCircle, Clock, Target, FileText } from 'lucide-react';
 import Card from '../../components/common/Card';
@@ -6,8 +6,9 @@ import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Select from '../../components/common/Select';
 import TextArea from '../../components/common/TextArea';
-import { mockClients, mockProjects } from '../../data/mockData';
-import { format } from 'date-fns';
+import { useProjects } from '../../context/ProjectContext';
+import { mockClients } from '../../data/mockData';
+import { Project, ProjectStage } from '../../types';
 
 interface ProjectFormData {
   description: string;
@@ -23,10 +24,10 @@ interface ProjectFormData {
   objectives: string;
   deliverables: string;
   notes: string;
-  stages: ProjectStageData[];
+  stages: ProjectStageFormData[];
 }
 
-interface ProjectStageData {
+interface ProjectStageFormData {
   id: string;
   description: string;
   estimatedHours: number;
@@ -40,6 +41,7 @@ const ProjectForm: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditing = !!id;
+  const { createProject, updateProject, getProject, loading } = useProjects();
 
   const [formData, setFormData] = useState<ProjectFormData>({
     description: '',
@@ -59,8 +61,44 @@ const ProjectForm: React.FC = () => {
   });
 
   const [errors, setErrors] = useState<Partial<ProjectFormData>>({});
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<'basic' | 'stages' | 'details'>('basic');
+
+  // Load project data for editing
+  useEffect(() => {
+    if (isEditing && id) {
+      const project = getProject(id);
+      if (project) {
+        setFormData({
+          description: project.description,
+          client: project.client || '',
+          responsible: project.responsible || '',
+          startDate: '', // You might want to add these fields to the Project type
+          endDate: '',
+          estimatedHours: project.totalHours,
+          status: project.status,
+          priority: 'medium', // Default since not in current Project type
+          budget: 0, // Default since not in current Project type
+          category: '',
+          objectives: '',
+          deliverables: '',
+          notes: '',
+          stages: project.stages.map(stage => ({
+            id: stage.id,
+            description: stage.description,
+            estimatedHours: stage.estimatedHours,
+            startDate: '',
+            endDate: '',
+            responsible: '',
+            status: stage.status
+          }))
+        });
+      } else {
+        // Project not found, redirect to list
+        navigate('/projects');
+      }
+    }
+  }, [id, isEditing, getProject, navigate]);
 
   const handleInputChange = (field: keyof ProjectFormData, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -70,7 +108,7 @@ const ProjectForm: React.FC = () => {
   };
 
   const addStage = () => {
-    const newStage: ProjectStageData = {
+    const newStage: ProjectStageFormData = {
       id: Date.now().toString(),
       description: '',
       estimatedHours: 0,
@@ -85,7 +123,7 @@ const ProjectForm: React.FC = () => {
     }));
   };
 
-  const updateStage = (stageId: string, field: keyof ProjectStageData, value: string | number) => {
+  const updateStage = (stageId: string, field: keyof ProjectStageFormData, value: string | number) => {
     setFormData(prev => ({
       ...prev,
       stages: prev.stages.map(stage =>
@@ -104,10 +142,9 @@ const ProjectForm: React.FC = () => {
   const validateForm = (): boolean => {
     const newErrors: Partial<ProjectFormData> = {};
 
-    if (!formData.description) newErrors.description = 'Descrição é obrigatória';
+    if (!formData.description.trim()) newErrors.description = 'Descrição é obrigatória';
     if (!formData.client) newErrors.client = 'Cliente é obrigatório';
     if (!formData.responsible) newErrors.responsible = 'Responsável é obrigatório';
-    if (!formData.startDate) newErrors.startDate = 'Data de início é obrigatória';
     if (formData.estimatedHours <= 0) newErrors.estimatedHours = 'Horas estimadas devem ser maior que zero';
 
     setErrors(newErrors);
@@ -119,19 +156,41 @@ const ProjectForm: React.FC = () => {
     
     if (!validateForm()) return;
 
-    setLoading(true);
+    setSubmitting(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log('Project data:', formData);
+      // Convert form data to project format
+      const projectStages: ProjectStage[] = formData.stages.map((stage, index) => ({
+        id: stage.id,
+        projectId: id || '',
+        stageId: index + 1,
+        description: stage.description,
+        estimatedHours: stage.estimatedHours,
+        actualHours: 0,
+        status: stage.status
+      }));
+
+      const projectData = {
+        description: formData.description,
+        client: formData.client,
+        responsible: formData.responsible,
+        totalHours: formData.estimatedHours,
+        status: formData.status,
+        stages: projectStages
+      };
+
+      if (isEditing && id) {
+        await updateProject(id, projectData);
+      } else {
+        await createProject(projectData);
+      }
       
       navigate('/projects');
     } catch (error) {
       console.error('Error saving project:', error);
+      alert('Erro ao salvar projeto. Tente novamente.');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -164,10 +223,10 @@ const ProjectForm: React.FC = () => {
   ];
 
   const responsibleOptions = [
-    { value: 'carlos.oliveira', label: 'Carlos Oliveira' },
-    { value: 'ana.lima', label: 'Ana Lima' },
-    { value: 'pedro.santos', label: 'Pedro Santos' },
-    { value: 'maria.silva', label: 'Maria Silva' }
+    { value: 'Carlos Oliveira', label: 'Carlos Oliveira' },
+    { value: 'Ana Lima', label: 'Ana Lima' },
+    { value: 'Pedro Santos', label: 'Pedro Santos' },
+    { value: 'Maria Silva', label: 'Maria Silva' }
   ];
 
   const selectedClient = mockClients.find(client => client.cnpj === formData.client);
@@ -277,8 +336,6 @@ const ProjectForm: React.FC = () => {
                         type="date"
                         value={formData.startDate}
                         onChange={(e) => handleInputChange('startDate', e.target.value)}
-                        required
-                        error={errors.startDate}
                       />
 
                       <Input
@@ -595,10 +652,10 @@ const ProjectForm: React.FC = () => {
                 <Button
                   type="submit"
                   icon={Save}
-                  disabled={loading}
+                  disabled={submitting || loading}
                   className="w-full"
                 >
-                  {loading ? 'Salvando...' : (isEditing ? 'Atualizar Projeto' : 'Criar Projeto')}
+                  {submitting ? 'Salvando...' : (isEditing ? 'Atualizar Projeto' : 'Criar Projeto')}
                 </Button>
                 
                 <Button

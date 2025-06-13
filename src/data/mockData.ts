@@ -1,4 +1,4 @@
-import { Ticket, Project, ExpenseReimbursement, Client, Department, Classification, DashboardStats } from '../types';
+import { Ticket, ExpenseReimbursement, Client, Department, Classification, DashboardStats } from '../types';
 
 export const mockClients: Client[] = [
   {
@@ -15,6 +15,22 @@ export const mockClients: Client[] = [
     nomeFantasia: 'XYZ Corp',
     dataCadastro: new Date('2024-02-10'),
     grupo: 'Grupo B',
+    status: 'active'
+  },
+  {
+    cnpj: '11122233000144',
+    razaoSocial: 'Empresa DEF Ltda',
+    nomeFantasia: 'Empresa DEF',
+    dataCadastro: new Date('2024-01-20'),
+    grupo: 'Grupo C',
+    status: 'active'
+  },
+  {
+    cnpj: '55566677000188',
+    razaoSocial: 'StartupTech Inovação SA',
+    nomeFantasia: 'StartupTech',
+    dataCadastro: new Date('2024-02-01'),
+    grupo: 'Grupo D',
     status: 'active'
   }
 ];
@@ -92,62 +108,6 @@ export const mockTickets: Ticket[] = [
         authorType: 'internal',
         department: 'Desenvolvimento',
         isExternal: false
-      }
-    ]
-  }
-];
-
-export const mockProjects: Project[] = [
-  {
-    id: '1',
-    number: 2001,
-    description: 'Implementação do novo módulo de relatórios para ABC Company',
-    createdAt: new Date('2024-01-10'),
-    client: 'ABC Company',
-    responsible: 'Carlos Oliveira',
-    totalHours: 120,
-    status: 'active',
-    progress: 65,
-    stages: [
-      {
-        id: '1',
-        projectId: '1',
-        stageId: 1,
-        description: 'Levantamento de requisitos',
-        estimatedHours: 20,
-        actualHours: 18,
-        status: 'completed'
-      },
-      {
-        id: '2',
-        projectId: '1',
-        stageId: 2,
-        description: 'Desenvolvimento das telas',
-        estimatedHours: 60,
-        actualHours: 45,
-        status: 'in-progress'
-      }
-    ]
-  },
-  {
-    id: '2',
-    number: 2002,
-    description: 'Migração do sistema legado para nova plataforma - XYZ Corp',
-    createdAt: new Date('2024-01-05'),
-    client: 'XYZ Corp',
-    responsible: 'Ana Lima',
-    totalHours: 200,
-    status: 'planning',
-    progress: 25,
-    stages: [
-      {
-        id: '3',
-        projectId: '2',
-        stageId: 1,
-        description: 'Análise do sistema atual',
-        estimatedHours: 40,
-        actualHours: 35,
-        status: 'completed'
       }
     ]
   }
