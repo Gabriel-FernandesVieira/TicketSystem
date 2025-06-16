@@ -16,6 +16,8 @@ import ProjectList from './pages/projects/ProjectList';
 import ProjectForm from './pages/projects/ProjectForm';
 import ProjectDetail from './pages/projects/ProjectDetail';
 import ExpenseList from './pages/expenses/ExpenseList';
+import ExpenseForm from './pages/expenses/ExpenseForm';
+import ExpenseDetail from './pages/expenses/ExpenseDetail';
 import UserList from './pages/registrations/UserList';
 
 const AppRoutes: React.FC = () => {
@@ -46,6 +48,9 @@ const AppRoutes: React.FC = () => {
         <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/projects/:id/edit" element={<ProjectForm />} />
         <Route path="/expenses" element={<ExpenseList />} />
+        <Route path="/expenses/new" element={<ExpenseForm />} />
+        <Route path="/expenses/:id" element={<ExpenseDetail />} />
+        <Route path="/expenses/:id/edit" element={<ExpenseForm />} />
         
         {/* Registration Routes - Admin Only */}
         <Route 
