@@ -6,7 +6,8 @@ import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Select from '../../components/common/Select';
 import TextArea from '../../components/common/TextArea';
-import { mockClients, mockClassifications, mockProjects } from '../../data/mockData';
+import { mockClients, mockClassifications } from '../../data/mockData';
+import { useProjects } from '../../context/ProjectContext';
 
 interface TicketFormData {
   cnpj: string;
@@ -24,6 +25,7 @@ const TicketForm: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditing = !!id;
+  const { projects } = useProjects();
 
   const [formData, setFormData] = useState<TicketFormData>({
     cnpj: '',
@@ -116,7 +118,7 @@ const TicketForm: React.FC = () => {
     { value: 'urgent', label: 'Urgente' }
   ];
 
-  const projectOptions = mockProjects.map(project => ({
+  const projectOptions = projects.map(project => ({
     value: project.id,
     label: `#${project.number} - ${project.description.substring(0, 50)}...`
   }));
