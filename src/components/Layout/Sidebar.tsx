@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Ticket, FolderPen as FolderProject, Receipt, Settings, Users, Building2, GitBranch, Tag, AlertCircle, Package, Truck, MapPin, FileText, ChevronDown, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Ticket, FolderPen as FolderProject, Receipt, Settings, Users, Building2, GitBranch, Tag, AlertCircle, Package, Truck, MapPin, FileText, ChevronDown, ChevronRight, List, Kanban } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 interface SidebarProps {
@@ -10,7 +10,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
   const { user } = useAuth();
-  const [openMenus, setOpenMenus] = React.useState<string[]>(['registrations']);
+  const [openMenus, setOpenMenus] = React.useState<string[]>(['registrations', 'tickets']);
 
   const toggleMenu = (menuId: string) => {
     setOpenMenus(prev => 
@@ -22,9 +22,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
 
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
-    { icon: Ticket, label: 'Tickets', path: '/tickets' },
     { icon: FolderProject, label: 'Projetos', path: '/projects' },
     { icon: Receipt, label: 'Reembolsos', path: '/expenses' }
+  ];
+
+  const ticketItems = [
+    { icon: List, label: 'Lista de Tickets', path: '/tickets' },
+    { icon: AlertCircle, label: 'Fila de Prioridade', path: '/tickets/queue' },
+    { icon: Kanban, label: 'Kanban Board', path: '/tickets/kanban' }
   ];
 
   const registrationItems = [
@@ -68,6 +73,44 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
             {!isCollapsed && <span className="ml-3">{item.label}</span>}
           </NavLink>
         ))}
+
+        {/* Tickets Menu */}
+        <div className="mt-6">
+          <div 
+            className="flex items-center px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+            onClick={() => toggleMenu('tickets')}
+          >
+            <Ticket className="w-5 h-5" />
+            {!isCollapsed && (
+              <>
+                <span className="ml-3">Tickets</span>
+                {openMenus.includes('tickets') ? 
+                  <ChevronDown className="w-4 h-4 ml-auto" /> : 
+                  <ChevronRight className="w-4 h-4 ml-auto" />
+                }
+              </>
+            )}
+          </div>
+
+          {(!isCollapsed && openMenus.includes('tickets')) && (
+            <div className="ml-4">
+              {ticketItems.map((item) => (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `flex items-center px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                      isActive ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : ''
+                    }`
+                  }
+                >
+                  <item.icon className="w-4 h-4" />
+                  <span className="ml-3">{item.label}</span>
+                </NavLink>
+              ))}
+            </div>
+          )}
+        </div>
 
         {user?.role === 'admin' && (
           <div className="mt-6">

@@ -10,6 +10,8 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import TicketList from './pages/tickets/TicketList';
+import TicketQueue from './pages/tickets/TicketQueue';
+import TicketKanban from './pages/tickets/TicketKanban';
 import TicketDetail from './pages/tickets/TicketDetail';
 import TicketForm from './pages/tickets/TicketForm';
 import ProjectList from './pages/projects/ProjectList';
@@ -40,6 +42,8 @@ const AppRoutes: React.FC = () => {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/tickets" element={<TicketList />} />
+        <Route path="/tickets/queue" element={<TicketQueue />} />
+        <Route path="/tickets/kanban" element={<TicketKanban />} />
         <Route path="/tickets/new" element={<TicketForm />} />
         <Route path="/tickets/:id" element={<TicketDetail />} />
         <Route path="/tickets/:id/edit" element={<TicketForm />} />
