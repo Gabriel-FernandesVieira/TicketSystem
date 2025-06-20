@@ -21,6 +21,7 @@ import ExpenseList from './pages/expenses/ExpenseList';
 import ExpenseForm from './pages/expenses/ExpenseForm';
 import ExpenseDetail from './pages/expenses/ExpenseDetail';
 import UserList from './pages/registrations/UserList';
+import UserForm from './pages/registrations/UserForm';
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, loading } = useAuth();
@@ -62,6 +63,22 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <UserList />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/registrations/users/new" 
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <UserForm />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/registrations/users/:id/edit" 
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <UserForm />
             </ProtectedRoute>
           } 
         />
