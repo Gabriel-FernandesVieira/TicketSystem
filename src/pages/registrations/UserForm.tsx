@@ -6,6 +6,9 @@ import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Select from '../../components/common/Select';
 import TextArea from '../../components/common/TextArea';
+import { useUsers, useUser } from '../../hooks/useUsers';
+import { CreateUserRequest, uploadUserAvatar } from '../../services/userApi';
+import { ApiError } from '../../services/api';
 
 interface UserFormData {
   name: string;
@@ -29,6 +32,9 @@ const UserForm: React.FC = () => {
   const { id } = useParams();
   const isEditing = !!id;
 
+  const { createNewUser, updateExistingUser } = useUsers();
+  const { user: existingUser, loading: loadingUser, error: userError } = useUser(id);
+
   const [formData, setFormData] = useState<UserFormData>({
     name: '',
     email: '',
@@ -51,43 +57,58 @@ const UserForm: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'basic' | 'permissions' | 'details'>('basic');
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Mock data for existing user (when editing)
+  // Load existing user data for editing
   useEffect(() => {
-    if (isEditing && id) {
-      // Simulate loading existing user data
-      setLoading(true);
-      setTimeout(() => {
-        setFormData({
-          name: 'João Silva',
-          email: 'joao.silva@empresa.com',
-          password: '',
-          confirmPassword: '',
-          role: 'admin',
-          department: 'TI',
-          phone: '(11) 99999-9999',
-          position: 'Desenvolvedor Senior',
-          location: 'São Paulo - SP',
-          startDate: '2023-01-15',
-          status: 'active',
-          permissions: ['tickets.create', 'tickets.edit', 'projects.view'],
-          notes: 'Usuário experiente com conhecimento em React e Node.js'
-        });
-        setLoading(false);
-      }, 1000);
+    if (isEditing && existingUser) {
+      setFormData({
+        name: existingUser.name || '',
+        email: existingUser.email || '',
+        password: '',
+        confirmPassword: '',
+        role: existingUser.role || 'user',
+        department: existingUser.department || '',
+        phone: '', // These fields might not exist in the User type
+        position: '',
+        location: '',
+        startDate: '',
+        status: existingUser.status || 'active',
+        permissions: [], // This would need to come from the API
+        notes: ''
+      });
+
+      if (existingUser.avatar) {
+        setAvatarPreview(existingUser.avatar);
+      }
     }
-  }, [id, isEditing]);
+  }, [isEditing, existingUser]);
 
   const handleInputChange = (field: keyof UserFormData, value: string | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
+    if (submitError) {
+      setSubmitError(null);
+    }
   };
 
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        setErrors(prev => ({ ...prev, avatar: 'Arquivo deve ter no máximo 2MB' }));
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setErrors(prev => ({ ...prev, avatar: 'Arquivo deve ser uma imagem' }));
+        return;
+      }
+
       setFormData(prev => ({ ...prev, avatar: file }));
       
       // Create preview
@@ -96,6 +117,11 @@ const UserForm: React.FC = () => {
         setAvatarPreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
+
+      // Clear any previous avatar errors
+      if (errors.avatar) {
+        setErrors(prev => ({ ...prev, avatar: undefined }));
+      }
     }
   };
 
@@ -114,6 +140,8 @@ const UserForm: React.FC = () => {
       if (formData.password !== formData.confirmPassword) {
         newErrors.confirmPassword = 'Senhas não coincidem';
       }
+    } else if (formData.password && formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Senhas não coincidem';
     }
 
     if (!formData.department) newErrors.department = 'Departamento é obrigatório';
@@ -128,19 +156,57 @@ const UserForm: React.FC = () => {
     if (!validateForm()) return;
 
     setLoading(true);
+    setSubmitError(null);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      console.log('User data:', formData);
+      const userData: CreateUserRequest = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+        department: formData.department,
+        phone: formData.phone,
+        position: formData.position,
+        location: formData.location,
+        startDate: formData.startDate,
+        status: formData.status,
+        permissions: formData.permissions,
+        notes: formData.notes,
+      };
+
+      let savedUser;
+      if (isEditing && id) {
+        // For editing, don't include password if it's empty
+        const updateData = { ...userData };
+        if (!formData.password) {
+          delete updateData.password;
+        }
+        savedUser = await updateExistingUser(id, updateData);
+      } else {
+        savedUser = await createNewUser(userData);
+      }
+
+      // Upload avatar if provided
+      if (formData.avatar && savedUser) {
+        try {
+          await uploadUserAvatar(savedUser.id, formData.avatar);
+        } catch (avatarError) {
+          console.warn('Failed to upload avatar:', avatarError);
+          // Don't fail the entire operation for avatar upload issues
+        }
+      }
       
       // Show success message
       alert(isEditing ? 'Usuário atualizado com sucesso!' : 'Usuário criado com sucesso!');
       navigate('/registrations/users');
     } catch (error) {
       console.error('Error saving user:', error);
-      alert('Erro ao salvar usuário. Tente novamente.');
+      
+      if (error instanceof ApiError) {
+        setSubmitError(error.message);
+      } else {
+        setSubmitError('Erro ao salvar usuário. Tente novamente.');
+      }
     } finally {
       setLoading(false);
     }
@@ -207,13 +273,32 @@ const UserForm: React.FC = () => {
     { id: 'details', label: 'Detalhes', icon: Building2 }
   ];
 
-  if (loading && isEditing) {
+  if (loadingUser) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-400">Carregando dados do usuário...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (userError) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <Card className="max-w-md w-full">
+          <div className="text-center">
+            <AlertCircle className="mx-auto h-12 w-12 text-red-400" />
+            <h2 className="mt-4 text-xl font-semibold text-gray-900 dark:text-white">
+              Erro ao carregar usuário
+            </h2>
+            <p className="mt-2 text-gray-500 dark:text-gray-400">{userError}</p>
+            <Button onClick={() => navigate('/registrations/users')} className="mt-4">
+              Voltar para lista
+            </Button>
+          </div>
+        </Card>
       </div>
     );
   }
@@ -239,6 +324,27 @@ const UserForm: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Error Alert */}
+      {submitError && (
+        <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
+          <div className="flex items-start space-x-3">
+            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="text-sm font-medium text-red-900 dark:text-red-300">
+                Erro ao salvar usuário
+              </h3>
+              <p className="text-sm text-red-800 dark:text-red-400 mt-1">{submitError}</p>
+            </div>
+            <button
+              onClick={() => setSubmitError(null)}
+              className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+            >
+              ×
+            </button>
+          </div>
+        </Card>
+      )}
 
       {/* Tab Navigation */}
       <Card>
@@ -310,6 +416,9 @@ const UserForm: React.FC = () => {
                         <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                           JPG, PNG ou GIF. Máximo 2MB.
                         </p>
+                        {errors.avatar && (
+                          <p className="text-xs text-red-500 mt-1">{errors.avatar}</p>
+                        )}
                       </div>
                     </div>
 
@@ -334,16 +443,16 @@ const UserForm: React.FC = () => {
                       />
                     </div>
 
-                    {!isEditing && (
+                    {(!isEditing || formData.password) && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="relative">
                           <Input
-                            label="Senha"
+                            label={isEditing ? "Nova Senha (deixe em branco para manter)" : "Senha"}
                             type={showPassword ? 'text' : 'password'}
                             value={formData.password}
                             onChange={(e) => handleInputChange('password', e.target.value)}
                             placeholder="Digite a senha"
-                            required
+                            required={!isEditing}
                             error={errors.password}
                           />
                           <button
@@ -362,7 +471,7 @@ const UserForm: React.FC = () => {
                             value={formData.confirmPassword}
                             onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                             placeholder="Confirme a senha"
-                            required
+                            required={!isEditing || !!formData.password}
                             error={errors.confirmPassword}
                           />
                           <button
@@ -609,7 +718,6 @@ const UserForm: React.FC = () => {
                     onClick={() => {
                       setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
                       setActiveTab('basic');
-                      alert('Formulário de redefinição de senha será exibido');
                     }}
                   >
                     <Lock className="w-4 h-4 mr-2" />

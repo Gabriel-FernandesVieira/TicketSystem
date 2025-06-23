@@ -1,80 +1,13 @@
-import React, { useState } from 'react';
-import { Plus, Search, Eye, Edit, Trash2, User, Shield, Download, Filter, MoreVertical } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Search, Eye, Edit, Trash2, User, Shield, Download, Filter, MoreVertical, RefreshCw, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Select from '../../components/common/Select';
 import Table from '../../components/common/Table';
-
-// Mock data for users
-const mockUsers = [
-  {
-    id: '1',
-    name: 'João Silva',
-    email: 'joao.silva@empresa.com',
-    role: 'admin',
-    department: 'TI',
-    position: 'Desenvolvedor Senior',
-    status: 'active',
-    lastLogin: new Date('2024-01-15T14:30:00'),
-    createdAt: new Date('2023-01-15'),
-    phone: '(11) 99999-9999',
-    location: 'São Paulo - SP'
-  },
-  {
-    id: '2',
-    name: 'Maria Santos',
-    email: 'maria.santos@empresa.com',
-    role: 'manager',
-    department: 'Atendimento',
-    position: 'Gerente de Atendimento',
-    status: 'active',
-    lastLogin: new Date('2024-01-14T16:45:00'),
-    createdAt: new Date('2023-02-10'),
-    phone: '(11) 88888-8888',
-    location: 'São Paulo - SP'
-  },
-  {
-    id: '3',
-    name: 'Pedro Costa',
-    email: 'pedro.costa@empresa.com',
-    role: 'user',
-    department: 'Suporte',
-    position: 'Analista de Suporte',
-    status: 'inactive',
-    lastLogin: new Date('2024-01-10T09:20:00'),
-    createdAt: new Date('2023-03-05'),
-    phone: '(11) 77777-7777',
-    location: 'Rio de Janeiro - RJ'
-  },
-  {
-    id: '4',
-    name: 'Ana Lima',
-    email: 'ana.lima@empresa.com',
-    role: 'support',
-    department: 'Suporte',
-    position: 'Especialista em Suporte',
-    status: 'active',
-    lastLogin: new Date('2024-01-16T11:15:00'),
-    createdAt: new Date('2023-04-20'),
-    phone: '(11) 66666-6666',
-    location: 'Belo Horizonte - MG'
-  },
-  {
-    id: '5',
-    name: 'Carlos Oliveira',
-    email: 'carlos.oliveira@empresa.com',
-    role: 'manager',
-    department: 'Comercial',
-    position: 'Gerente Comercial',
-    status: 'active',
-    lastLogin: new Date('2024-01-16T08:30:00'),
-    createdAt: new Date('2023-01-30'),
-    phone: '(11) 55555-5555',
-    location: 'São Paulo - SP'
-  }
-];
+import { useUsers } from '../../hooks/useUsers';
+import { UserFilters } from '../../services/userApi';
 
 const UserList: React.FC = () => {
   const navigate = useNavigate();
@@ -83,18 +16,43 @@ const UserList: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const filteredUsers = mockUsers.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.position.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = !roleFilter || user.role === roleFilter;
-    const matchesStatus = !statusFilter || user.status === statusFilter;
-    const matchesDepartment = !departmentFilter || user.department === departmentFilter;
-    
-    return matchesSearch && matchesRole && matchesStatus && matchesDepartment;
+  const {
+    users,
+    loading,
+    error,
+    total,
+    page,
+    limit,
+    loadUsers,
+    deleteExistingUser,
+    clearError,
+    refreshUsers
+  } = useUsers({
+    page: currentPage,
+    limit: 10
   });
+
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const filters: UserFilters = {
+        page: currentPage,
+        limit: 10,
+      };
+
+      if (searchTerm) filters.search = searchTerm;
+      if (roleFilter) filters.role = roleFilter;
+      if (statusFilter) filters.status = statusFilter;
+      if (departmentFilter) filters.department = departmentFilter;
+
+      loadUsers(filters);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, roleFilter, statusFilter, departmentFilter, currentPage, loadUsers]);
 
   const getRoleLabel = (role: string) => {
     const roles = {
@@ -122,18 +80,36 @@ const UserList: React.FC = () => {
     );
   };
 
-  const handleDelete = (userId: string, userName: string) => {
+  const handleDelete = async (userId: string, userName: string) => {
     if (window.confirm(`Tem certeza que deseja excluir o usuário "${userName}"?`)) {
-      // In a real app, this would call an API
-      console.log(`Deleting user ${userId}`);
-      alert('Usuário excluído com sucesso!');
+      setDeletingId(userId);
+      try {
+        await deleteExistingUser(userId);
+        alert('Usuário excluído com sucesso!');
+      } catch (error) {
+        console.error('Error deleting user:', error);
+        alert('Erro ao excluir usuário. Tente novamente.');
+      } finally {
+        setDeletingId(null);
+      }
     }
   };
 
   const handleBulkAction = (action: string) => {
-    // In a real app, this would handle bulk operations
     console.log(`Bulk action: ${action}`);
     alert(`Ação em lote: ${action}`);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setRoleFilter('');
+    setStatusFilter('');
+    setDepartmentFilter('');
+    setCurrentPage(1);
   };
 
   const columns = [
@@ -143,7 +119,11 @@ const UserList: React.FC = () => {
       render: (value: string, row: any) => (
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-            <User className="w-5 h-5 text-white" />
+            {row.avatar ? (
+              <img src={row.avatar} alt={row.name} className="w-full h-full rounded-full object-cover" />
+            ) : (
+              <User className="w-5 h-5 text-white" />
+            )}
           </div>
           <div>
             <p className="font-medium text-gray-900 dark:text-white">{row.name}</p>
@@ -162,14 +142,12 @@ const UserList: React.FC = () => {
       label: 'Departamento',
       render: (value: string, row: any) => (
         <div>
-          <p className="font-medium text-gray-900 dark:text-white">{value}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{row.position}</p>
+          <p className="font-medium text-gray-900 dark:text-white">{value || 'Não definido'}</p>
+          {row.position && (
+            <p className="text-sm text-gray-500 dark:text-gray-400">{row.position}</p>
+          )}
         </div>
       )
-    },
-    {
-      key: 'location',
-      label: 'Localização'
     },
     {
       key: 'status',
@@ -185,16 +163,6 @@ const UserList: React.FC = () => {
           }`} />
           {value === 'active' ? 'Ativo' : 'Inativo'}
         </span>
-      )
-    },
-    {
-      key: 'lastLogin',
-      label: 'Último Acesso',
-      render: (value: Date) => (
-        <div>
-          <p className="text-sm text-gray-900 dark:text-white">{value.toLocaleDateString('pt-BR')}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">{value.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
-        </div>
       )
     },
     {
@@ -218,10 +186,15 @@ const UserList: React.FC = () => {
           </button>
           <button
             onClick={() => handleDelete(row.id, row.name)}
-            className="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+            disabled={deletingId === row.id}
+            className="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors disabled:opacity-50"
             title="Excluir"
           >
-            <Trash2 className="w-4 h-4" />
+            {deletingId === row.id ? (
+              <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Trash2 className="w-4 h-4" />
+            )}
           </button>
           <div className="relative group">
             <button className="p-1 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors">
@@ -271,11 +244,13 @@ const UserList: React.FC = () => {
   ];
 
   const stats = {
-    total: mockUsers.length,
-    active: mockUsers.filter(u => u.status === 'active').length,
-    admins: mockUsers.filter(u => u.role === 'admin').length,
-    managers: mockUsers.filter(u => u.role === 'manager').length
+    total: total,
+    active: users.filter(u => u.status === 'active').length,
+    admins: users.filter(u => u.role === 'admin').length,
+    managers: users.filter(u => u.role === 'manager').length
   };
+
+  const totalPages = Math.ceil(total / limit);
 
   return (
     <div className="space-y-6">
@@ -283,10 +258,18 @@ const UserList: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Usuários</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-2">
-            Gerencie todos os usuários do sistema ({stats.total} usuários)
+            Gerencie todos os usuários do sistema ({total} usuários)
           </p>
         </div>
         <div className="flex items-center space-x-3">
+          <Button
+            variant="outline"
+            icon={RefreshCw}
+            onClick={refreshUsers}
+            disabled={loading}
+          >
+            Atualizar
+          </Button>
           <Button
             variant="outline"
             icon={Download}
@@ -302,6 +285,38 @@ const UserList: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* Error Alert */}
+      {error && (
+        <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
+          <div className="flex items-start space-x-3">
+            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="text-sm font-medium text-red-900 dark:text-red-300">
+                Erro ao carregar usuários
+              </h3>
+              <p className="text-sm text-red-800 dark:text-red-400 mt-1">{error}</p>
+              <div className="mt-3 flex space-x-3">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={refreshUsers}
+                  disabled={loading}
+                >
+                  Tentar Novamente
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={clearError}
+                >
+                  Dispensar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -403,15 +418,10 @@ const UserList: React.FC = () => {
           {(searchTerm || roleFilter || statusFilter || departmentFilter) && (
             <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
               <p className="text-sm text-blue-800 dark:text-blue-300">
-                Mostrando {filteredUsers.length} de {mockUsers.length} usuários
+                Mostrando {users.length} de {total} usuários
               </p>
               <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setRoleFilter('');
-                  setStatusFilter('');
-                  setDepartmentFilter('');
-                }}
+                onClick={clearAllFilters}
                 className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
               >
                 Limpar filtros
@@ -421,10 +431,41 @@ const UserList: React.FC = () => {
 
           <Table
             columns={columns}
-            data={filteredUsers}
+            data={users}
             onRowClick={(user) => navigate(`/registrations/users/${user.id}`)}
+            loading={loading}
             emptyMessage="Nenhum usuário encontrado"
           />
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-4">
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                Mostrando {((page - 1) * limit) + 1} a {Math.min(page * limit, total)} de {total} usuários
+              </p>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={page <= 1 || loading}
+                >
+                  Anterior
+                </Button>
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  Página {page} de {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={page >= totalPages || loading}
+                >
+                  Próxima
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </Card>
     </div>
