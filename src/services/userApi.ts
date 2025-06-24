@@ -1,19 +1,13 @@
 import { apiRequest, ApiError } from './api';
 import { User } from '../types';
+import { UNSAFE_DataRouterStateContext } from 'react-router-dom';
 
-export interface CreateUserRequest {
-  name: string;
-  email: string;
-  password: string;
-  role: 'admin' | 'manager' | 'user' | 'support';
-  department: string;
-  phone?: string;
-  position?: string;
-  location?: string;
-  startDate?: string;
-  status: 'active' | 'inactive';
-  permissions: string[];
-  notes?: string;
+export interface  CreateUserRequest {
+  emailsist: string;
+  nome: string;
+  senha?: string;
+  status: 0;
+  departamento: 1;
 }
 
 export interface UpdateUserRequest extends Partial<CreateUserRequest> {
@@ -47,10 +41,13 @@ export async function fetchUsers(filters: UserFilters = {}): Promise<UsersRespon
   });
 
   const queryString = queryParams.toString();
-  const endpoint = `/users${queryString ? `?${queryString}` : ''}`;
+  const endpoint = `Autenticacao/GetAllUsers${queryString ? `?${queryString}` : ''}`;
 
   try {
-    return await apiRequest<UsersResponse>(endpoint);
+    const  teste =  await apiRequest<UsersResponse>(endpoint);
+    console.log(teste);
+    return teste;
+
   } catch (error) {
     console.error('Error fetching users:', error);
     throw error;
@@ -58,11 +55,11 @@ export async function fetchUsers(filters: UserFilters = {}): Promise<UsersRespon
 }
 
 // Fetch a single user by ID
-export async function fetchUserById(id: string): Promise<User> {
+export async function fetchUserById(email: string): Promise<User> {
   try {
-    return await apiRequest<User>(`/users/${id}`);
+    return await apiRequest<User>(`/Autenticacao/GetAllUsers`);
   } catch (error) {
-    console.error(`Error fetching user ${id}:`, error);
+    console.error(`Error fetching user ${email}:`, error);
     throw error;
   }
 }
@@ -70,12 +67,14 @@ export async function fetchUserById(id: string): Promise<User> {
 // Create a new user
 export async function createUser(userData: CreateUserRequest): Promise<User> {
   try {
-    return await apiRequest<User>('/users', {
+
+    console.log(userData);
+    return await apiRequest<User>('Autenticacao/PostUser', {
       method: 'POST',
       body: JSON.stringify(userData),
     });
   } catch (error) {
-    console.error('Error creating user:', error);
+    console.error('Erro ao criar o usuario: ', error);
     throw error;
   }
 }

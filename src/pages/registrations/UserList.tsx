@@ -36,7 +36,9 @@ const UserList: React.FC = () => {
   });
 
   // Debounced search effect
-  useEffect(() => {
+
+
+  /*useEffect(() => {
     const timeoutId = setTimeout(() => {
       const filters: UserFilters = {
         page: currentPage,
@@ -52,7 +54,15 @@ const UserList: React.FC = () => {
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, roleFilter, statusFilter, departmentFilter, currentPage, loadUsers]);
+  }, [searchTerm, roleFilter, statusFilter, departmentFilter, currentPage, loadUsers]);*/
+
+  useEffect(() => {
+  const filters: UserFilters = {
+    page: 1,
+    limit: 10
+  };
+  loadUsers(filters);
+}, []);
 
   const getRoleLabel = (role: string) => {
     const roles = {
@@ -71,7 +81,7 @@ const UserList: React.FC = () => {
       user: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
       support: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
     };
-    
+
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config[role as keyof typeof config] || config.user}`}>
         <Shield className="w-3 h-3 mr-1" />
@@ -153,14 +163,12 @@ const UserList: React.FC = () => {
       key: 'status',
       label: 'Status',
       render: (value: string) => (
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-          value === 'active' 
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${value === 'active'
             ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
             : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-        }`}>
-          <div className={`w-2 h-2 rounded-full mr-1 ${
-            value === 'active' ? 'bg-green-500' : 'bg-red-500'
-          }`} />
+          }`}>
+          <div className={`w-2 h-2 rounded-full mr-1 ${value === 'active' ? 'bg-green-500' : 'bg-red-500'
+            }`} />
           {value === 'active' ? 'Ativo' : 'Inativo'}
         </span>
       )
@@ -244,10 +252,10 @@ const UserList: React.FC = () => {
   ];
 
   const stats = {
-    total: total,
-    active: users.filter(u => u.status === 'active').length,
-    admins: users.filter(u => u.role === 'admin').length,
-    managers: users.filter(u => u.role === 'manager').length
+    total: total || 0,
+    active: (users || []).filter(u => u.status === 'active').length,
+    admins: (users || []).filter(u => u.role === 'admin').length,
+    managers: (users || []).filter(u => u.role === 'manager').length
   };
 
   const totalPages = Math.ceil(total / limit);
@@ -329,7 +337,7 @@ const UserList: React.FC = () => {
             <User className="w-8 h-8 text-blue-600 dark:text-blue-400" />
           </div>
         </Card>
-        
+
         <Card className="border-l-4 border-green-500">
           <div className="flex items-center justify-between">
             <div>
@@ -341,7 +349,7 @@ const UserList: React.FC = () => {
             </div>
           </div>
         </Card>
-        
+
         <Card className="border-l-4 border-red-500">
           <div className="flex items-center justify-between">
             <div>
@@ -351,7 +359,7 @@ const UserList: React.FC = () => {
             <Shield className="w-8 h-8 text-red-600 dark:text-red-400" />
           </div>
         </Card>
-        
+
         <Card className="border-l-4 border-purple-500">
           <div className="flex items-center justify-between">
             <div>
@@ -375,7 +383,7 @@ const UserList: React.FC = () => {
                 className="max-w-md"
               />
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <Button
                 variant="outline"
@@ -397,14 +405,14 @@ const UserList: React.FC = () => {
                 options={roleOptions}
                 className="w-full"
               />
-              
+
               <Select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 options={statusOptions}
                 className="w-full"
               />
-              
+
               <Select
                 value={departmentFilter}
                 onChange={(e) => setDepartmentFilter(e.target.value)}
@@ -431,7 +439,7 @@ const UserList: React.FC = () => {
 
           <Table
             columns={columns}
-            data={users}
+            data={users || [] }
             onRowClick={(user) => navigate(`/registrations/users/${user.id}`)}
             loading={loading}
             emptyMessage="Nenhum usuário encontrado"

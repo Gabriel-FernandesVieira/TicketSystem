@@ -160,18 +160,11 @@ const UserForm: React.FC = () => {
     
     try {
       const userData: CreateUserRequest = {
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        role: formData.role,
-        department: formData.department,
-        phone: formData.phone,
-        position: formData.position,
-        location: formData.location,
-        startDate: formData.startDate,
-        status: formData.status,
-        permissions: formData.permissions,
-        notes: formData.notes,
+        emailsist: formData.name,
+        nome: formData.email,
+        senha: formData.password,
+        status: 0,
+        departamento : 1
       };
 
       let savedUser;
@@ -179,7 +172,7 @@ const UserForm: React.FC = () => {
         // For editing, don't include password if it's empty
         const updateData = { ...userData };
         if (!formData.password) {
-          delete updateData.password;
+          delete updateData.senha;
         }
         savedUser = await updateExistingUser(id, updateData);
       } else {
@@ -417,7 +410,7 @@ const UserForm: React.FC = () => {
                           JPG, PNG ou GIF. Máximo 2MB.
                         </p>
                         {errors.avatar && (
-                          <p className="text-xs text-red-500 mt-1">{errors.avatar}</p>
+                          <p className="text-xs text-red-500 mt-1">{null}</p>
                         )}
                       </div>
                     </div>

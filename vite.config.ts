@@ -7,4 +7,13 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  server: {
+    proxy: {
+      '/HTicket': {
+        target: 'http://localhost:7142',
+          changeOrigin: true,
+        secure: false
+      }
+    }
+  }
 });
