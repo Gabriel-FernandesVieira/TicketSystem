@@ -103,7 +103,15 @@ export interface Department {
   id: string;
   code: number;
   name: string;
-  description?: string;
+  description: string;
+  status: 'active' | 'inactive';
+  manager?: string;
+  location?: string;
+  budget?: number;
+  costCenter?: string;
+  notes?: string;
+  userCount?: number;
+  createdAt?: Date;
 }
 
 export interface Classification {

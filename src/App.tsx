@@ -22,6 +22,9 @@ import ExpenseForm from './pages/expenses/ExpenseForm';
 import ExpenseDetail from './pages/expenses/ExpenseDetail';
 import UserList from './pages/registrations/UserList';
 import UserForm from './pages/registrations/UserForm';
+import DepartmentList from './pages/registrations/DepartmentList';
+import DepartmentForm from './pages/registrations/DepartmentForm';
+import DepartmentDetail from './pages/registrations/DepartmentDetail';
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, loading } = useAuth();
@@ -79,6 +82,40 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <UserForm />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Department Routes - Admin Only */}
+        <Route 
+          path="/registrations/departments" 
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <DepartmentList />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/registrations/departments/new" 
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <DepartmentForm />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/registrations/departments/:id" 
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <DepartmentDetail />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/registrations/departments/:id/edit" 
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <DepartmentForm />
             </ProtectedRoute>
           } 
         />
