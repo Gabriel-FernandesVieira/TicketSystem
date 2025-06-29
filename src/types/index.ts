@@ -8,6 +8,11 @@ export interface User {
   avatar?: string;
   cnpj?: string;
   codusuario?: number;
+  // Oracle table fields
+  emailsist?: string;
+  nome?: string;
+  senha?: string;
+  departamento?: number;
 }
 
 export interface Client {

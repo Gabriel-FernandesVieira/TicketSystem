@@ -12,7 +12,6 @@ import { UserFilters } from '../../services/userApi';
 const UserList: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -36,9 +35,7 @@ const UserList: React.FC = () => {
   });
 
   // Debounced search effect
-
-
-  /*useEffect(() => {
+  useEffect(() => {
     const timeoutId = setTimeout(() => {
       const filters: UserFilters = {
         page: currentPage,
@@ -46,55 +43,47 @@ const UserList: React.FC = () => {
       };
 
       if (searchTerm) filters.search = searchTerm;
-      if (roleFilter) filters.role = roleFilter;
-      if (statusFilter) filters.status = statusFilter;
-      if (departmentFilter) filters.department = departmentFilter;
+      if (statusFilter) filters.status = Number(statusFilter);
+      if (departmentFilter) filters.departamento = Number(departmentFilter);
 
       loadUsers(filters);
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, roleFilter, statusFilter, departmentFilter, currentPage, loadUsers]);*/
+  }, [searchTerm, statusFilter, departmentFilter, currentPage, loadUsers]);
 
-  useEffect(() => {
-  const filters: UserFilters = {
-    page: 1,
-    limit: 10
-  };
-  loadUsers(filters);
-}, []);
-
-  const getRoleLabel = (role: string) => {
-    const roles = {
-      admin: 'Administrador',
-      manager: 'Gestor',
-      user: 'Usuário',
-      support: 'Suporte'
+  const getDepartmentName = (code: number): string => {
+    const departments: Record<number, string> = {
+      1: 'Tecnologia da Informação',
+      2: 'Atendimento ao Cliente',
+      3: 'Comercial',
+      4: 'Financeiro',
+      5: 'Recursos Humanos',
+      6: 'Marketing'
     };
-    return roles[role as keyof typeof roles] || role;
+    return departments[code] || 'Não definido';
   };
 
-  const getRoleBadge = (role: string) => {
-    const config = {
-      admin: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
-      manager: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
-      user: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
-      support: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-    };
-
+  const getStatusBadge = (status: string) => {
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config[role as keyof typeof config] || config.user}`}>
-        <Shield className="w-3 h-3 mr-1" />
-        {getRoleLabel(role)}
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+        status === 'active'
+          ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+          : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+      }`}>
+        <div className={`w-2 h-2 rounded-full mr-1 ${
+          status === 'active' ? 'bg-green-500' : 'bg-red-500'
+        }`} />
+        {status === 'active' ? 'Ativo' : 'Inativo'}
       </span>
     );
   };
 
-  const handleDelete = async (userId: string, userName: string) => {
+  const handleDelete = async (userEmail: string, userName: string) => {
     if (window.confirm(`Tem certeza que deseja excluir o usuário "${userName}"?`)) {
-      setDeletingId(userId);
+      setDeletingId(userEmail);
       try {
-        await deleteExistingUser(userId);
+        await deleteExistingUser(userEmail);
         alert('Usuário excluído com sucesso!');
       } catch (error) {
         console.error('Error deleting user:', error);
@@ -116,7 +105,6 @@ const UserList: React.FC = () => {
 
   const clearAllFilters = () => {
     setSearchTerm('');
-    setRoleFilter('');
     setStatusFilter('');
     setDepartmentFilter('');
     setCurrentPage(1);
@@ -143,35 +131,21 @@ const UserList: React.FC = () => {
       )
     },
     {
-      key: 'role',
-      label: 'Perfil',
-      render: (value: string) => getRoleBadge(value)
-    },
-    {
       key: 'department',
       label: 'Departamento',
       render: (value: string, row: any) => (
         <div>
           <p className="font-medium text-gray-900 dark:text-white">{value || 'Não definido'}</p>
-          {row.position && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">{row.position}</p>
-          )}
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Código: {row.departamento || 'N/A'}
+          </p>
         </div>
       )
     },
     {
       key: 'status',
       label: 'Status',
-      render: (value: string) => (
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${value === 'active'
-            ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-            : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-          }`}>
-          <div className={`w-2 h-2 rounded-full mr-1 ${value === 'active' ? 'bg-green-500' : 'bg-red-500'
-            }`} />
-          {value === 'active' ? 'Ativo' : 'Inativo'}
-        </span>
-      )
+      render: (value: string) => getStatusBadge(value)
     },
     {
       key: 'actions',
@@ -179,26 +153,26 @@ const UserList: React.FC = () => {
       render: (_: any, row: any) => (
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => navigate(`/registrations/users/${row.id}`)}
+            onClick={() => navigate(`/registrations/users/${row.email}`)}
             className="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
             title="Visualizar"
           >
             <Eye className="w-4 h-4" />
           </button>
           <button
-            onClick={() => navigate(`/registrations/users/${row.id}/edit`)}
+            onClick={() => navigate(`/registrations/users/${row.email}/edit`)}
             className="p-1 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
             title="Editar"
           >
             <Edit className="w-4 h-4" />
           </button>
           <button
-            onClick={() => handleDelete(row.id, row.name)}
-            disabled={deletingId === row.id}
+            onClick={() => handleDelete(row.email, row.name)}
+            disabled={deletingId === row.email}
             className="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors disabled:opacity-50"
             title="Excluir"
           >
-            {deletingId === row.id ? (
+            {deletingId === row.email ? (
               <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
             ) : (
               <Trash2 className="w-4 h-4" />
@@ -214,9 +188,6 @@ const UserList: React.FC = () => {
                   Redefinir Senha
                 </button>
                 <button className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
-                  Enviar Convite
-                </button>
-                <button className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
                   Histórico de Login
                 </button>
               </div>
@@ -227,35 +198,27 @@ const UserList: React.FC = () => {
     }
   ];
 
-  const roleOptions = [
-    { value: '', label: 'Todos os perfis' },
-    { value: 'admin', label: 'Administrador' },
-    { value: 'manager', label: 'Gestor' },
-    { value: 'user', label: 'Usuário' },
-    { value: 'support', label: 'Suporte' }
-  ];
-
   const statusOptions = [
     { value: '', label: 'Todos os status' },
-    { value: 'active', label: 'Ativo' },
-    { value: 'inactive', label: 'Inativo' }
+    { value: '1', label: 'Ativo' },
+    { value: '0', label: 'Inativo' }
   ];
 
   const departmentOptions = [
     { value: '', label: 'Todos os departamentos' },
-    { value: 'TI', label: 'Tecnologia da Informação' },
-    { value: 'Atendimento', label: 'Atendimento ao Cliente' },
-    { value: 'Suporte', label: 'Suporte Técnico' },
-    { value: 'Comercial', label: 'Comercial' },
-    { value: 'Financeiro', label: 'Financeiro' },
-    { value: 'RH', label: 'Recursos Humanos' }
+    { value: '1', label: 'Tecnologia da Informação' },
+    { value: '2', label: 'Atendimento ao Cliente' },
+    { value: '3', label: 'Comercial' },
+    { value: '4', label: 'Financeiro' },
+    { value: '5', label: 'Recursos Humanos' },
+    { value: '6', label: 'Marketing' }
   ];
 
   const stats = {
     total: total || 0,
     active: (users || []).filter(u => u.status === 'active').length,
-    admins: (users || []).filter(u => u.role === 'admin').length,
-    managers: (users || []).filter(u => u.role === 'manager').length
+    ti: (users || []).filter(u => u.departamento === 1).length,
+    atendimento: (users || []).filter(u => u.departamento === 2).length
   };
 
   const totalPages = Math.ceil(total / limit);
@@ -264,9 +227,9 @@ const UserList: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Usuários</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Usuários do Sistema</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-2">
-            Gerencie todos os usuários do sistema ({total} usuários)
+            Gerencie todos os usuários da tabela UNUSRSIST ({total} usuários)
           </p>
         </div>
         <div className="flex items-center space-x-3">
@@ -350,23 +313,23 @@ const UserList: React.FC = () => {
           </div>
         </Card>
 
-        <Card className="border-l-4 border-red-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Administradores</p>
-              <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.admins}</p>
-            </div>
-            <Shield className="w-8 h-8 text-red-600 dark:text-red-400" />
-          </div>
-        </Card>
-
         <Card className="border-l-4 border-purple-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Gestores</p>
-              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.managers}</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">TI</p>
+              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.ti}</p>
             </div>
-            <User className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+            <Shield className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+          </div>
+        </Card>
+
+        <Card className="border-l-4 border-orange-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Atendimento</p>
+              <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{stats.atendimento}</p>
+            </div>
+            <User className="w-8 h-8 text-orange-600 dark:text-orange-400" />
           </div>
         </Card>
       </div>
@@ -377,7 +340,7 @@ const UserList: React.FC = () => {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 lg:space-x-4">
             <div className="flex-1">
               <Input
-                placeholder="Pesquisar usuários por nome, email, departamento..."
+                placeholder="Pesquisar usuários por nome ou email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="max-w-md"
@@ -398,14 +361,7 @@ const UserList: React.FC = () => {
 
           {/* Advanced Filters */}
           {showFilters && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <Select
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-                options={roleOptions}
-                className="w-full"
-              />
-
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <Select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -423,7 +379,7 @@ const UserList: React.FC = () => {
           )}
 
           {/* Results Summary */}
-          {(searchTerm || roleFilter || statusFilter || departmentFilter) && (
+          {(searchTerm || statusFilter || departmentFilter) && (
             <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
               <p className="text-sm text-blue-800 dark:text-blue-300">
                 Mostrando {users.length} de {total} usuários
@@ -439,8 +395,8 @@ const UserList: React.FC = () => {
 
           <Table
             columns={columns}
-            data={users || [] }
-            onRowClick={(user) => navigate(`/registrations/users/${user.id}`)}
+            data={users || []}
+            onRowClick={(user) => navigate(`/registrations/users/${user.email}`)}
             loading={loading}
             emptyMessage="Nenhum usuário encontrado"
           />
@@ -474,6 +430,26 @@ const UserList: React.FC = () => {
               </div>
             </div>
           )}
+        </div>
+      </Card>
+
+      {/* Oracle Database Info */}
+      <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+        <div className="flex items-start space-x-3">
+          <div className="flex-shrink-0">
+            <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center">
+              <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            </div>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-1">
+              Tabela Oracle UNUSRSIST
+            </h3>
+            <p className="text-sm text-blue-800 dark:text-blue-400">
+              Os dados dos usuários são armazenados na tabela UNUSRSIST do Oracle Database. 
+              Campos: EMAILSIST (email), NOME (nome), SENHA (senha), STATUS (0/1), DEPARTAMENTO (código).
+            </p>
+          </div>
         </div>
       </Card>
     </div>

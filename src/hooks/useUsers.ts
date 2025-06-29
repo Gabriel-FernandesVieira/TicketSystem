@@ -5,7 +5,7 @@ import {
   createUser, 
   updateUser, 
   deleteUser, 
-  fetchUserById,
+  fetchUserByEmail,
   CreateUserRequest,
   UpdateUserRequest,
   UserFilters,
@@ -25,8 +25,8 @@ interface UseUsersState {
 interface UseUsersActions {
   loadUsers: (filters?: UserFilters) => Promise<void>;
   createNewUser: (userData: CreateUserRequest) => Promise<User>;
-  updateExistingUser: (id: string, userData: Partial<UpdateUserRequest>) => Promise<User>;
-  deleteExistingUser: (id: string) => Promise<void>;
+  updateExistingUser: (email: string, userData: Partial<UpdateUserRequest>) => Promise<User>;
+  deleteExistingUser: (email: string) => Promise<void>;
   clearError: () => void;
   refreshUsers: () => Promise<void>;
 }
@@ -98,17 +98,17 @@ export function useUsers(initialFilters: UserFilters = {}): UseUsersState & UseU
     }
   }, [loadUsers]);
 
-  const updateExistingUser = useCallback(async (id: string, userData: Partial<UpdateUserRequest>): Promise<User> => {
+  const updateExistingUser = useCallback(async (email: string, userData: Partial<UpdateUserRequest>): Promise<User> => {
     setState(prev => ({ ...prev, loading: true, error: null }));
     
     try {
-      const updatedUser = await updateUser(id, userData);
+      const updatedUser = await updateUser(email, userData);
       
       // Update the user in the local state
       setState(prev => ({
         ...prev,
         users: prev.users.map(user => 
-          user.id === id ? updatedUser : user
+          user.email === email ? updatedUser : user
         ),
         loading: false,
       }));
@@ -128,16 +128,16 @@ export function useUsers(initialFilters: UserFilters = {}): UseUsersState & UseU
     }
   }, []);
 
-  const deleteExistingUser = useCallback(async (id: string): Promise<void> => {
+  const deleteExistingUser = useCallback(async (email: string): Promise<void> => {
     setState(prev => ({ ...prev, loading: true, error: null }));
     
     try {
-      await deleteUser(id);
+      await deleteUser(email);
       
       // Remove the user from the local state
       setState(prev => ({
         ...prev,
-        users: prev.users.filter(user => user.id !== id),
+        users: prev.users.filter(user => user.email !== email),
         total: prev.total - 1,
         loading: false,
       }));
@@ -180,19 +180,19 @@ export function useUsers(initialFilters: UserFilters = {}): UseUsersState & UseU
 }
 
 // Hook for fetching a single user
-export function useUser(id: string | undefined) {
+export function useUser(email: string | undefined) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadUser = useCallback(async () => {
-    if (!id) return;
+    if (!email) return;
     
     setLoading(true);
     setError(null);
     
     try {
-      const userData = await fetchUserById(id);
+      const userData = await fetchUserByEmail(email);
       setUser(userData);
     } catch (error) {
       const errorMessage = error instanceof ApiError 
@@ -202,7 +202,7 @@ export function useUser(id: string | undefined) {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [email]);
 
   useEffect(() => {
     loadUser();

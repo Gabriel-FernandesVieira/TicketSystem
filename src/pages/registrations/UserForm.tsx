@@ -11,18 +11,12 @@ import { CreateUserRequest, uploadUserAvatar } from '../../services/userApi';
 import { ApiError } from '../../services/api';
 
 interface UserFormData {
-  name: string;
-  email: string;
-  password: string;
+  emailsist: string;
+  nome: string;
+  senha: string;
   confirmPassword: string;
-  role: 'admin' | 'manager' | 'user' | 'support';
-  department: string;
-  phone: string;
-  position: string;
-  location: string;
-  startDate: string;
-  status: 'active' | 'inactive';
-  permissions: string[];
+  status: number; // 0 = inactive, 1 = active
+  departamento: number;
   notes: string;
   avatar?: File;
 }
@@ -36,18 +30,12 @@ const UserForm: React.FC = () => {
   const { user: existingUser, loading: loadingUser, error: userError } = useUser(id);
 
   const [formData, setFormData] = useState<UserFormData>({
-    name: '',
-    email: '',
-    password: '',
+    emailsist: '',
+    nome: '',
+    senha: '',
     confirmPassword: '',
-    role: 'user',
-    department: '',
-    phone: '',
-    position: '',
-    location: '',
-    startDate: '',
-    status: 'active',
-    permissions: [],
+    status: 1, // Active by default
+    departamento: 1, // Default to TI department
     notes: '',
   });
 
@@ -56,25 +44,19 @@ const UserForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'basic' | 'permissions' | 'details'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'details'>('basic');
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Load existing user data for editing
   useEffect(() => {
     if (isEditing && existingUser) {
       setFormData({
-        name: existingUser.name || '',
-        email: existingUser.email || '',
-        password: '',
+        emailsist: existingUser.emailsist || existingUser.email || '',
+        nome: existingUser.nome || existingUser.name || '',
+        senha: '',
         confirmPassword: '',
-        role: existingUser.role || 'user',
-        department: existingUser.department || '',
-        phone: '', // These fields might not exist in the User type
-        position: '',
-        location: '',
-        startDate: '',
-        status: existingUser.status || 'active',
-        permissions: [], // This would need to come from the API
+        status: existingUser.status === 'active' ? 1 : 0,
+        departamento: existingUser.departamento || 1,
         notes: ''
       });
 
@@ -84,7 +66,7 @@ const UserForm: React.FC = () => {
     }
   }, [isEditing, existingUser]);
 
-  const handleInputChange = (field: keyof UserFormData, value: string | string[]) => {
+  const handleInputChange = (field: keyof UserFormData, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
@@ -129,22 +111,23 @@ const UserForm: React.FC = () => {
     const newErrors: Partial<UserFormData> = {};
 
     // Basic validation
-    if (!formData.name.trim()) newErrors.name = 'Nome é obrigatório';
-    if (!formData.email.trim()) newErrors.email = 'Email é obrigatório';
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email inválido';
+    if (!formData.emailsist.trim()) newErrors.emailsist = 'Email é obrigatório';
+    else if (!/\S+@\S+\.\S+/.test(formData.emailsist)) newErrors.emailsist = 'Email inválido';
+    
+    if (!formData.nome.trim()) newErrors.nome = 'Nome é obrigatório';
     
     if (!isEditing) {
-      if (!formData.password) newErrors.password = 'Senha é obrigatória';
-      else if (formData.password.length < 6) newErrors.password = 'Senha deve ter pelo menos 6 caracteres';
+      if (!formData.senha) newErrors.senha = 'Senha é obrigatória';
+      else if (formData.senha.length < 6) newErrors.senha = 'Senha deve ter pelo menos 6 caracteres';
       
-      if (formData.password !== formData.confirmPassword) {
+      if (formData.senha !== formData.confirmPassword) {
         newErrors.confirmPassword = 'Senhas não coincidem';
       }
-    } else if (formData.password && formData.password !== formData.confirmPassword) {
+    } else if (formData.senha && formData.senha !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Senhas não coincidem';
     }
 
-    if (!formData.department) newErrors.department = 'Departamento é obrigatório';
+    if (!formData.departamento) newErrors.departamento = 'Departamento é obrigatório';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -160,18 +143,18 @@ const UserForm: React.FC = () => {
     
     try {
       const userData: CreateUserRequest = {
-        emailsist: formData.name,
-        nome: formData.email,
-        senha: formData.password,
-        status: 0,
-        departamento : 1
+        emailsist: formData.emailsist,
+        nome: formData.nome,
+        senha: formData.senha,
+        status: formData.status,
+        departamento: formData.departamento
       };
 
       let savedUser;
       if (isEditing && id) {
         // For editing, don't include password if it's empty
         const updateData = { ...userData };
-        if (!formData.password) {
+        if (!formData.senha) {
           delete updateData.senha;
         }
         savedUser = await updateExistingUser(id, updateData);
@@ -182,7 +165,7 @@ const UserForm: React.FC = () => {
       // Upload avatar if provided
       if (formData.avatar && savedUser) {
         try {
-          await uploadUserAvatar(savedUser.id, formData.avatar);
+          await uploadUserAvatar(savedUser.email, formData.avatar);
         } catch (avatarError) {
           console.warn('Failed to upload avatar:', avatarError);
           // Don't fail the entire operation for avatar upload issues
@@ -205,64 +188,27 @@ const UserForm: React.FC = () => {
     }
   };
 
-  const roleOptions = [
-    { value: 'user', label: 'Usuário' },
-    { value: 'support', label: 'Suporte' },
-    { value: 'manager', label: 'Gestor' },
-    { value: 'admin', label: 'Administrador' }
+  const statusOptions = [
+    { value: '1', label: 'Ativo' },
+    { value: '0', label: 'Inativo' }
   ];
 
   const departmentOptions = [
-    { value: 'TI', label: 'Tecnologia da Informação' },
-    { value: 'Atendimento', label: 'Atendimento ao Cliente' },
-    { value: 'Suporte', label: 'Suporte Técnico' },
-    { value: 'Comercial', label: 'Comercial' },
-    { value: 'Financeiro', label: 'Financeiro' },
-    { value: 'RH', label: 'Recursos Humanos' },
-    { value: 'Diretoria', label: 'Diretoria' }
+    { value: '1', label: 'Tecnologia da Informação' },
+    { value: '2', label: 'Atendimento ao Cliente' },
+    { value: '3', label: 'Comercial' },
+    { value: '4', label: 'Financeiro' },
+    { value: '5', label: 'Recursos Humanos' },
+    { value: '6', label: 'Marketing' }
   ];
 
-  const statusOptions = [
-    { value: 'active', label: 'Ativo' },
-    { value: 'inactive', label: 'Inativo' }
-  ];
-
-  const permissionOptions = [
-    { value: 'tickets.create', label: 'Criar Tickets' },
-    { value: 'tickets.edit', label: 'Editar Tickets' },
-    { value: 'tickets.delete', label: 'Excluir Tickets' },
-    { value: 'tickets.assign', label: 'Atribuir Tickets' },
-    { value: 'projects.view', label: 'Visualizar Projetos' },
-    { value: 'projects.create', label: 'Criar Projetos' },
-    { value: 'projects.edit', label: 'Editar Projetos' },
-    { value: 'projects.delete', label: 'Excluir Projetos' },
-    { value: 'expenses.view', label: 'Visualizar Reembolsos' },
-    { value: 'expenses.approve', label: 'Aprovar Reembolsos' },
-    { value: 'reports.view', label: 'Visualizar Relatórios' },
-    { value: 'users.manage', label: 'Gerenciar Usuários' }
-  ];
-
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'admin': return 'text-red-600 dark:text-red-400';
-      case 'manager': return 'text-blue-600 dark:text-blue-400';
-      case 'support': return 'text-yellow-600 dark:text-yellow-400';
-      default: return 'text-green-600 dark:text-green-400';
-    }
-  };
-
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'admin': return Shield;
-      case 'manager': return Building2;
-      case 'support': return User;
-      default: return User;
-    }
+  const getDepartmentName = (code: number): string => {
+    const dept = departmentOptions.find(d => d.value === code.toString());
+    return dept?.label || 'Não definido';
   };
 
   const tabs = [
     { id: 'basic', label: 'Informações Básicas', icon: User },
-    { id: 'permissions', label: 'Permissões', icon: Shield },
     { id: 'details', label: 'Detalhes', icon: Building2 }
   ];
 
@@ -410,7 +356,7 @@ const UserForm: React.FC = () => {
                           JPG, PNG ou GIF. Máximo 2MB.
                         </p>
                         {errors.avatar && (
-                          <p className="text-xs text-red-500 mt-1">{null}</p>
+                          <p className="text-xs text-red-500 mt-1">{errors.avatar}</p>
                         )}
                       </div>
                     </div>
@@ -418,35 +364,36 @@ const UserForm: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Input
                         label="Nome Completo"
-                        value={formData.name}
-                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        value={formData.nome}
+                        onChange={(e) => handleInputChange('nome', e.target.value)}
                         placeholder="Digite o nome completo"
                         required
-                        error={errors.name}
+                        error={errors.nome}
                       />
 
                       <Input
                         label="Email"
                         type="email"
-                        value={formData.email}
-                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        value={formData.emailsist}
+                        onChange={(e) => handleInputChange('emailsist', e.target.value)}
                         placeholder="usuario@empresa.com"
                         required
-                        error={errors.email}
+                        error={errors.emailsist}
+                        disabled={isEditing} // Email shouldn't be changed in edit mode
                       />
                     </div>
 
-                    {(!isEditing || formData.password) && (
+                    {(!isEditing || formData.senha) && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="relative">
                           <Input
                             label={isEditing ? "Nova Senha (deixe em branco para manter)" : "Senha"}
                             type={showPassword ? 'text' : 'password'}
-                            value={formData.password}
-                            onChange={(e) => handleInputChange('password', e.target.value)}
+                            value={formData.senha}
+                            onChange={(e) => handleInputChange('senha', e.target.value)}
                             placeholder="Digite a senha"
                             required={!isEditing}
-                            error={errors.password}
+                            error={errors.senha}
                           />
                           <button
                             type="button"
@@ -464,7 +411,7 @@ const UserForm: React.FC = () => {
                             value={formData.confirmPassword}
                             onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                             placeholder="Confirme a senha"
-                            required={!isEditing || !!formData.password}
+                            required={!isEditing || !!formData.senha}
                             error={errors.confirmPassword}
                           />
                           <button
@@ -477,133 +424,34 @@ const UserForm: React.FC = () => {
                         </div>
                       </div>
                     )}
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Input
-                        label="Telefone"
-                        value={formData.phone}
-                        onChange={(e) => handleInputChange('phone', e.target.value)}
-                        placeholder="(11) 99999-9999"
-                      />
-
-                      <Input
-                        label="Cargo/Posição"
-                        value={formData.position}
-                        onChange={(e) => handleInputChange('position', e.target.value)}
-                        placeholder="Ex: Desenvolvedor Senior"
-                      />
-                    </div>
                   </div>
                 </Card>
 
                 <Card title="Informações Organizacionais">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Select
-                      label="Perfil de Acesso"
-                      value={formData.role}
-                      onChange={(e) => handleInputChange('role', e.target.value)}
-                      options={roleOptions}
+                      label="Departamento"
+                      value={formData.departamento.toString()}
+                      onChange={(e) => handleInputChange('departamento', Number(e.target.value))}
+                      options={[{ value: '', label: 'Selecione um departamento' }, ...departmentOptions]}
                       required
+                      error={errors.departamento}
                     />
 
                     <Select
-                      label="Departamento"
-                      value={formData.department}
-                      onChange={(e) => handleInputChange('department', e.target.value)}
-                      options={[{ value: '', label: 'Selecione um departamento' }, ...departmentOptions]}
-                      required
-                      error={errors.department}
-                    />
-
-                    <Input
-                      label="Localização"
-                      value={formData.location}
-                      onChange={(e) => handleInputChange('location', e.target.value)}
-                      placeholder="Ex: São Paulo - SP"
-                    />
-
-                    <Input
-                      label="Data de Início"
-                      type="date"
-                      value={formData.startDate}
-                      onChange={(e) => handleInputChange('startDate', e.target.value)}
+                      label="Status"
+                      value={formData.status.toString()}
+                      onChange={(e) => handleInputChange('status', Number(e.target.value))}
+                      options={statusOptions}
                     />
                   </div>
                 </Card>
               </>
             )}
 
-            {activeTab === 'permissions' && (
-              <Card title="Permissões do Sistema">
-                <div className="space-y-6">
-                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                    <div className="flex items-start space-x-3">
-                      <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-                      <div>
-                        <h3 className="text-sm font-medium text-blue-900 dark:text-blue-300">
-                          Configuração de Permissões
-                        </h3>
-                        <p className="text-sm text-blue-800 dark:text-blue-400 mt-1">
-                          Selecione as permissões específicas que este usuário terá no sistema. 
-                          As permissões são baseadas no perfil selecionado, mas podem ser personalizadas.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {permissionOptions.map((permission) => (
-                      <label key={permission.value} className="flex items-center space-x-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors">
-                        <input
-                          type="checkbox"
-                          checked={formData.permissions.includes(permission.value)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              handleInputChange('permissions', [...formData.permissions, permission.value]);
-                            } else {
-                              handleInputChange('permissions', formData.permissions.filter(p => p !== permission.value));
-                            }
-                          }}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {permission.label}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-
-                  {formData.permissions.length > 0 && (
-                    <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-                      <h4 className="text-sm font-medium text-green-900 dark:text-green-300 mb-2">
-                        Permissões Selecionadas ({formData.permissions.length})
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {formData.permissions.map((permission) => {
-                          const permissionLabel = permissionOptions.find(p => p.value === permission)?.label;
-                          return (
-                            <span key={permission} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400">
-                              {permissionLabel}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </Card>
-            )}
-
             {activeTab === 'details' && (
               <Card title="Informações Adicionais">
                 <div className="space-y-4">
-                  <Select
-                    label="Status"
-                    value={formData.status}
-                    onChange={(e) => handleInputChange('status', e.target.value)}
-                    options={statusOptions}
-                  />
-
                   <TextArea
                     label="Observações"
                     value={formData.notes}
@@ -629,57 +477,37 @@ const UserForm: React.FC = () => {
                     )}
                   </div>
                   <h3 className="font-medium text-gray-900 dark:text-white">
-                    {formData.name || 'Nome do Usuário'}
+                    {formData.nome || 'Nome do Usuário'}
                   </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {formData.email || 'email@empresa.com'}
+                    {formData.emailsist || 'email@empresa.com'}
                   </p>
                 </div>
 
-                {formData.role && (
-                  <div className="text-center">
-                    <div className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium ${
-                      formData.role === 'admin' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
-                      formData.role === 'manager' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
-                      formData.role === 'support' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
-                      'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                    }`}>
-                      {React.createElement(getRoleIcon(formData.role), { className: 'w-4 h-4' })}
-                      <span>{roleOptions.find(r => r.value === formData.role)?.label}</span>
-                    </div>
-                  </div>
-                )}
-
-                {formData.department && (
+                {formData.departamento && (
                   <div>
                     <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
                       Departamento
                     </label>
-                    <p className="text-sm text-gray-900 dark:text-white">{formData.department}</p>
+                    <p className="text-sm text-gray-900 dark:text-white">{getDepartmentName(formData.departamento)}</p>
                   </div>
                 )}
 
-                {formData.position && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
-                      Cargo
-                    </label>
-                    <p className="text-sm text-gray-900 dark:text-white">{formData.position}</p>
-                  </div>
-                )}
-
-                {formData.permissions.length > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                      Permissões
-                    </label>
-                    <div className="text-center">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
-                        {formData.permissions.length} permissões configuradas
-                      </span>
-                    </div>
-                  </div>
-                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Status
+                  </label>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    formData.status === 1
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                      : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                  }`}>
+                    <div className={`w-2 h-2 rounded-full mr-1 ${
+                      formData.status === 1 ? 'bg-green-500' : 'bg-red-500'
+                    }`} />
+                    {formData.status === 1 ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
               </div>
             </Card>
 
@@ -709,7 +537,7 @@ const UserForm: React.FC = () => {
                     variant="outline"
                     className="w-full"
                     onClick={() => {
-                      setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
+                      setFormData(prev => ({ ...prev, senha: '', confirmPassword: '' }));
                       setActiveTab('basic');
                     }}
                   >
@@ -720,26 +548,25 @@ const UserForm: React.FC = () => {
               </div>
             </Card>
 
-            {formData.role && (
-              <Card title="Informações do Perfil">
-                <div className="space-y-3">
-                  <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    {React.createElement(getRoleIcon(formData.role), { 
-                      className: `w-8 h-8 mx-auto mb-2 ${getRoleColor(formData.role)}` 
-                    })}
-                    <h4 className="font-medium text-gray-900 dark:text-white">
-                      {roleOptions.find(r => r.value === formData.role)?.label}
-                    </h4>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {formData.role === 'admin' && 'Acesso total ao sistema'}
-                      {formData.role === 'manager' && 'Gerenciamento de equipe e projetos'}
-                      {formData.role === 'support' && 'Atendimento e suporte técnico'}
-                      {formData.role === 'user' && 'Acesso básico ao sistema'}
-                    </p>
-                  </div>
+            <Card title="Informações do Sistema">
+              <div className="space-y-3">
+                <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <Shield className="w-8 h-8 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-blue-800 dark:text-blue-300">Tabela UNUSRSIST</p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                    Dados armazenados no Oracle
+                  </p>
                 </div>
-              </Card>
-            )}
+                
+                <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <Building2 className="w-8 h-8 text-green-600 dark:text-green-400 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-green-800 dark:text-green-300">Departamento</p>
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                    Código: {formData.departamento}
+                  </p>
+                </div>
+              </div>
+            </Card>
           </div>
         </div>
       </form>
