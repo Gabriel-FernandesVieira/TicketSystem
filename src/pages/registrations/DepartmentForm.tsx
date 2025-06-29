@@ -1,24 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Building2, Hash, FileText, Users, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Save, Building2, Hash, AlertCircle, CheckCircle, Eye } from 'lucide-react';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
-import Select from '../../components/common/Select';
 import TextArea from '../../components/common/TextArea';
 import { useDepartments, useDepartment } from '../../hooks/useDepartments';
 import { CreateDepartmentRequest } from '../../services/departmentApi';
-import { ApiError } from '../../services/api';
 
 interface DepartmentFormData {
-  name: string;
-  description: string;
-  status: 'active' | 'inactive';
-  manager: string;
-  location: string;
-  budget: number;
-  costCenter: string;
-  notes: string;
+  descricao: string; // Required field from HNDEPARTAMENTO table
 }
 
 const DepartmentForm: React.FC = () => {
@@ -30,14 +21,7 @@ const DepartmentForm: React.FC = () => {
   const { department: existingDepartment, loading: loadingDepartment, error: departmentError } = useDepartment(id);
 
   const [formData, setFormData] = useState<DepartmentFormData>({
-    name: '',
-    description: '',
-    status: 'active',
-    manager: '',
-    location: '',
-    budget: 0,
-    costCenter: '',
-    notes: ''
+    descricao: ''
   });
 
   const [errors, setErrors] = useState<Partial<DepartmentFormData>>({});
@@ -49,14 +33,7 @@ const DepartmentForm: React.FC = () => {
   useEffect(() => {
     if (isEditing && existingDepartment) {
       setFormData({
-        name: existingDepartment.name || '',
-        description: existingDepartment.description || '',
-        status: existingDepartment.status || 'active',
-        manager: existingDepartment.manager || '',
-        location: existingDepartment.location || '',
-        budget: existingDepartment.budget || 0,
-        costCenter: existingDepartment.costCenter || '',
-        notes: existingDepartment.notes || ''
+        descricao: existingDepartment.descricao || ''
       });
     }
   }, [isEditing, existingDepartment]);
@@ -67,7 +44,7 @@ const DepartmentForm: React.FC = () => {
     setNextCode(Math.floor(Math.random() * 1000) + 100); // Mock next code
   }, []);
 
-  const handleInputChange = (field: keyof DepartmentFormData, value: string | number) => {
+  const handleInputChange = (field: keyof DepartmentFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
@@ -80,9 +57,9 @@ const DepartmentForm: React.FC = () => {
   const validateForm = (): boolean => {
     const newErrors: Partial<DepartmentFormData> = {};
 
-    if (!formData.name.trim()) newErrors.name = 'Nome é obrigatório';
-    if (formData.name.length < 2) newErrors.name = 'Nome deve ter pelo menos 2 caracteres';
-    if (!formData.description.trim()) newErrors.description = 'Descrição é obrigatória';
+    if (!formData.descricao.trim()) newErrors.descricao = 'Descrição é obrigatória';
+    if (formData.descricao.length < 2) newErrors.descricao = 'Descrição deve ter pelo menos 2 caracteres';
+    if (formData.descricao.length > 40) newErrors.descricao = 'Descrição deve ter no máximo 40 caracteres';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -98,18 +75,14 @@ const DepartmentForm: React.FC = () => {
     
     try {
       const departmentData: CreateDepartmentRequest = {
-        name: formData.name,
-        description: formData.description,
-        status: formData.status,
-        manager: formData.manager,
-        location: formData.location,
-        budget: formData.budget,
-        costCenter: formData.costCenter,
-        notes: formData.notes
+        descricao: formData.descricao.trim()
       };
 
       if (isEditing && id) {
-        await updateExistingDepartment(id, departmentData);
+        await updateExistingDepartment(id, {
+          departamento: existingDepartment?.departamento || 0,
+          descricao: departmentData.descricao
+        });
         alert('Departamento atualizado com sucesso!');
       } else {
         await createNewDepartment(departmentData);
@@ -120,7 +93,7 @@ const DepartmentForm: React.FC = () => {
     } catch (error) {
       console.error('Error saving department:', error);
       
-      if (error instanceof ApiError) {
+      if (error instanceof Error) {
         setSubmitError(error.message);
       } else {
         setSubmitError('Erro ao salvar departamento. Tente novamente.');
@@ -129,30 +102,6 @@ const DepartmentForm: React.FC = () => {
       setLoading(false);
     }
   };
-
-  const statusOptions = [
-    { value: 'active', label: 'Ativo' },
-    { value: 'inactive', label: 'Inativo' }
-  ];
-
-  const managerOptions = [
-    { value: '', label: 'Selecione um gestor' },
-    { value: 'Carlos Oliveira', label: 'Carlos Oliveira' },
-    { value: 'Ana Lima', label: 'Ana Lima' },
-    { value: 'Pedro Santos', label: 'Pedro Santos' },
-    { value: 'Maria Silva', label: 'Maria Silva' },
-    { value: 'João Costa', label: 'João Costa' }
-  ];
-
-  const locationOptions = [
-    { value: '', label: 'Selecione uma localização' },
-    { value: 'São Paulo - SP', label: 'São Paulo - SP' },
-    { value: 'Rio de Janeiro - RJ', label: 'Rio de Janeiro - RJ' },
-    { value: 'Belo Horizonte - MG', label: 'Belo Horizonte - MG' },
-    { value: 'Brasília - DF', label: 'Brasília - DF' },
-    { value: 'Porto Alegre - RS', label: 'Porto Alegre - RS' },
-    { value: 'Remoto', label: 'Trabalho Remoto' }
-  ];
 
   if (loadingDepartment) {
     return (
@@ -231,7 +180,7 @@ const DepartmentForm: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            <Card title="Informações Básicas">
+            <Card title="Informações do Departamento">
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -241,7 +190,7 @@ const DepartmentForm: React.FC = () => {
                     <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg">
                       <Hash className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                       <span className="text-lg font-bold text-gray-900 dark:text-white">
-                        {isEditing ? existingDepartment?.code : nextCode}
+                        {isEditing ? existingDepartment?.departamento : nextCode}
                       </span>
                       <span className="text-sm text-gray-500 dark:text-gray-400">
                         {isEditing ? '(Atual)' : '(Próximo disponível)'}
@@ -251,83 +200,44 @@ const DepartmentForm: React.FC = () => {
                       O código é gerado automaticamente em sequência
                     </p>
                   </div>
-
-                  <Select
-                    label="Status"
-                    value={formData.status}
-                    onChange={(e) => handleInputChange('status', e.target.value)}
-                    options={statusOptions}
-                  />
                 </div>
 
                 <Input
-                  label="Nome do Departamento"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="Digite o nome do departamento"
+                  label="Descrição do Departamento"
+                  value={formData.descricao}
+                  onChange={(e) => handleInputChange('descricao', e.target.value)}
+                  placeholder="Digite a descrição do departamento"
                   required
-                  error={errors.name}
+                  error={errors.descricao}
+                  maxLength={40}
                 />
-
-                <TextArea
-                  label="Descrição"
-                  value={formData.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
-                  placeholder="Descreva as responsabilidades e funções do departamento"
-                  rows={4}
-                  required
-                  error={errors.description}
-                />
-              </div>
-            </Card>
-
-            <Card title="Informações Organizacionais">
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Select
-                    label="Gestor Responsável"
-                    value={formData.manager}
-                    onChange={(e) => handleInputChange('manager', e.target.value)}
-                    options={managerOptions}
-                  />
-
-                  <Select
-                    label="Localização"
-                    value={formData.location}
-                    onChange={(e) => handleInputChange('location', e.target.value)}
-                    options={locationOptions}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    label="Orçamento Anual (R$)"
-                    type="number"
-                    value={formData.budget}
-                    onChange={(e) => handleInputChange('budget', Number(e.target.value))}
-                    placeholder="0,00"
-                    min="0"
-                    step="0.01"
-                  />
-
-                  <Input
-                    label="Centro de Custo"
-                    value={formData.costCenter}
-                    onChange={(e) => handleInputChange('costCenter', e.target.value)}
-                    placeholder="Ex: CC001"
-                  />
+                
+                <div className="text-right">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {formData.descricao.length}/40 caracteres
+                  </span>
                 </div>
               </div>
             </Card>
 
-            <Card title="Observações">
-              <TextArea
-                label="Notas Adicionais"
-                value={formData.notes}
-                onChange={(e) => handleInputChange('notes', e.target.value)}
-                placeholder="Adicione observações, políticas específicas ou informações importantes sobre o departamento"
-                rows={4}
-              />
+            <Card title="Informações da Tabela Oracle">
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                <div className="flex items-start space-x-3">
+                  <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <div>
+                    <h3 className="text-sm font-medium text-blue-900 dark:text-blue-300">
+                      Tabela HNDEPARTAMENTO
+                    </h3>
+                    <p className="text-sm text-blue-800 dark:text-blue-400 mt-1">
+                      Esta tela gerencia os dados da tabela HNDEPARTAMENTO do Oracle Database.
+                    </p>
+                    <div className="mt-3 text-xs text-blue-700 dark:text-blue-300">
+                      <p><strong>DEPARTAMENTO:</strong> Código numérico único (chave primária)</p>
+                      <p><strong>DESCRICAO:</strong> Descrição do departamento (máximo 40 caracteres)</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </Card>
           </div>
 
@@ -340,56 +250,44 @@ const DepartmentForm: React.FC = () => {
                     <Building2 className="w-8 h-8 text-white" />
                   </div>
                   <h3 className="font-medium text-gray-900 dark:text-white">
-                    {formData.name || 'Nome do Departamento'}
+                    {formData.descricao || 'Descrição do Departamento'}
                   </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Código: {isEditing ? existingDepartment?.code : nextCode}
+                    Código: {isEditing ? existingDepartment?.departamento : nextCode}
                   </p>
                 </div>
 
-                {formData.manager && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
-                      Gestor Responsável
-                    </label>
-                    <p className="text-sm text-gray-900 dark:text-white">{formData.manager}</p>
-                  </div>
-                )}
-
-                {formData.location && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
-                      Localização
-                    </label>
-                    <p className="text-sm text-gray-900 dark:text-white">{formData.location}</p>
-                  </div>
-                )}
-
-                {formData.budget > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
-                      Orçamento Anual
-                    </label>
-                    <p className="text-lg font-bold text-green-600 dark:text-green-400">
-                      R$ {formData.budget.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Descrição
+                  </label>
+                  <p className="text-sm text-gray-900 dark:text-white break-words">
+                    {formData.descricao || 'Digite a descrição...'}
+                  </p>
+                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Status
+                    Caracteres
                   </label>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    formData.status === 'active'
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                      : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                  }`}>
-                    <div className={`w-2 h-2 rounded-full mr-1 ${
-                      formData.status === 'active' ? 'bg-green-500' : 'bg-red-500'
-                    }`} />
-                    {formData.status === 'active' ? 'Ativo' : 'Inativo'}
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          formData.descricao.length > 40 ? 'bg-red-500' :
+                          formData.descricao.length > 30 ? 'bg-yellow-500' : 'bg-green-500'
+                        }`}
+                        style={{ width: `${Math.min((formData.descricao.length / 40) * 100, 100)}%` }}
+                      />
+                    </div>
+                    <span className={`text-sm font-medium ${
+                      formData.descricao.length > 40 ? 'text-red-600 dark:text-red-400' :
+                      formData.descricao.length > 30 ? 'text-yellow-600 dark:text-yellow-400' :
+                      'text-green-600 dark:text-green-400'
+                    }`}>
+                      {formData.descricao.length}/40
+                    </span>
+                  </div>
                 </div>
               </div>
             </Card>
@@ -439,10 +337,10 @@ const DepartmentForm: React.FC = () => {
                 </div>
                 
                 <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                  <Users className="w-8 h-8 text-green-600 dark:text-green-400 mx-auto mb-2" />
-                  <p className="text-sm font-medium text-green-800 dark:text-green-300">Usuários Vinculados</p>
+                  <Building2 className="w-8 h-8 text-green-600 dark:text-green-400 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-green-800 dark:text-green-300">Tabela Oracle</p>
                   <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                    {isEditing ? (existingDepartment?.userCount || 0) : 0} usuários
+                    HNDEPARTAMENTO
                   </p>
                 </div>
               </div>

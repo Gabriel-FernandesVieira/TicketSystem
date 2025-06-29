@@ -105,16 +105,15 @@ export interface ExpenseDetail {
 }
 
 export interface Department {
-  id: string;
-  code: number;
-  name: string;
-  description: string;
-  status: 'active' | 'inactive';
-  manager?: string;
-  location?: string;
-  budget?: number;
-  costCenter?: string;
-  notes?: string;
+  // Oracle HNDEPARTAMENTO table fields
+  departamento: number; // Primary key - department code
+  descricao: string; // Department description
+  
+  // Additional fields for UI compatibility
+  id?: string; // For compatibility with existing code
+  code?: number; // Alias for departamento
+  name?: string; // Alias for descricao
+  status?: 'active' | 'inactive';
   userCount?: number;
   createdAt?: Date;
 }

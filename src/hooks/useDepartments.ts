@@ -11,7 +11,6 @@ import {
   DepartmentFilters,
   DepartmentsResponse 
 } from '../services/departmentApi';
-import { ApiError } from '../services/api';
 
 interface UseDepartmentsState {
   departments: Department[];
@@ -25,8 +24,8 @@ interface UseDepartmentsState {
 interface UseDepartmentsActions {
   loadDepartments: (filters?: DepartmentFilters) => Promise<void>;
   createNewDepartment: (departmentData: CreateDepartmentRequest) => Promise<Department>;
-  updateExistingDepartment: (id: string, departmentData: Partial<UpdateDepartmentRequest>) => Promise<Department>;
-  deleteExistingDepartment: (id: string) => Promise<void>;
+  updateExistingDepartment: (departamento: string, departmentData: Partial<UpdateDepartmentRequest>) => Promise<Department>;
+  deleteExistingDepartment: (departamento: string) => Promise<void>;
   clearError: () => void;
   refreshDepartments: () => Promise<void>;
 }
@@ -61,7 +60,7 @@ export function useDepartments(initialFilters: DepartmentFilters = {}): UseDepar
         loading: false,
       }));
     } catch (error) {
-      const errorMessage = error instanceof ApiError 
+      const errorMessage = error instanceof Error 
         ? error.message 
         : 'Failed to load departments';
       
@@ -85,7 +84,7 @@ export function useDepartments(initialFilters: DepartmentFilters = {}): UseDepar
       setState(prev => ({ ...prev, loading: false }));
       return newDepartment;
     } catch (error) {
-      const errorMessage = error instanceof ApiError 
+      const errorMessage = error instanceof Error 
         ? error.message 
         : 'Failed to create department';
       
@@ -98,24 +97,26 @@ export function useDepartments(initialFilters: DepartmentFilters = {}): UseDepar
     }
   }, [loadDepartments]);
 
-  const updateExistingDepartment = useCallback(async (id: string, departmentData: Partial<UpdateDepartmentRequest>): Promise<Department> => {
+  const updateExistingDepartment = useCallback(async (departamento: string, departmentData: Partial<UpdateDepartmentRequest>): Promise<Department> => {
     setState(prev => ({ ...prev, loading: true, error: null }));
     
     try {
-      const updatedDepartment = await updateDepartment(id, departmentData);
+      const updatedDepartment = await updateDepartment(departamento, departmentData);
       
       // Update the department in the local state
       setState(prev => ({
         ...prev,
         departments: prev.departments.map(department => 
-          department.id === id ? updatedDepartment : department
+          department.departamento.toString() === departamento || department.id === departamento 
+            ? updatedDepartment 
+            : department
         ),
         loading: false,
       }));
       
       return updatedDepartment;
     } catch (error) {
-      const errorMessage = error instanceof ApiError 
+      const errorMessage = error instanceof Error 
         ? error.message 
         : 'Failed to update department';
       
@@ -128,21 +129,23 @@ export function useDepartments(initialFilters: DepartmentFilters = {}): UseDepar
     }
   }, []);
 
-  const deleteExistingDepartment = useCallback(async (id: string): Promise<void> => {
+  const deleteExistingDepartment = useCallback(async (departamento: string): Promise<void> => {
     setState(prev => ({ ...prev, loading: true, error: null }));
     
     try {
-      await deleteDepartment(id);
+      await deleteDepartment(departamento);
       
       // Remove the department from the local state
       setState(prev => ({
         ...prev,
-        departments: prev.departments.filter(department => department.id !== id),
+        departments: prev.departments.filter(department => 
+          department.departamento.toString() !== departamento && department.id !== departamento
+        ),
         total: prev.total - 1,
         loading: false,
       }));
     } catch (error) {
-      const errorMessage = error instanceof ApiError 
+      const errorMessage = error instanceof Error 
         ? error.message 
         : 'Failed to delete department';
       
@@ -180,29 +183,29 @@ export function useDepartments(initialFilters: DepartmentFilters = {}): UseDepar
 }
 
 // Hook for fetching a single department
-export function useDepartment(id: string | undefined) {
+export function useDepartment(departamento: string | undefined) {
   const [department, setDepartment] = useState<Department | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadDepartment = useCallback(async () => {
-    if (!id) return;
+    if (!departamento) return;
     
     setLoading(true);
     setError(null);
     
     try {
-      const departmentData = await fetchDepartmentById(id);
+      const departmentData = await fetchDepartmentById(departamento);
       setDepartment(departmentData);
     } catch (error) {
-      const errorMessage = error instanceof ApiError 
+      const errorMessage = error instanceof Error 
         ? error.message 
         : 'Failed to load department';
       setError(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [departamento]);
 
   useEffect(() => {
     loadDepartment();

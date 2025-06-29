@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Eye, Edit, Trash2, Building2, Hash, FileText, MoreVertical, RefreshCw, AlertCircle, Filter } from 'lucide-react';
+import { Plus, Search, Eye, Edit, Trash2, Building2, Hash, RefreshCw, AlertCircle, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
-import Select from '../../components/common/Select';
 import Table from '../../components/common/Table';
 import { useDepartments } from '../../hooks/useDepartments';
 
 const DepartmentList: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -30,19 +28,17 @@ const DepartmentList: React.FC = () => {
   }, []);
 
   const filteredDepartments = departments.filter(department => {
-    const matchesSearch = department.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         department.code.toString().includes(searchTerm) ||
-                         (department.description && department.description.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesStatus = !statusFilter || department.status === statusFilter;
+    const matchesSearch = department.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         department.departamento.toString().includes(searchTerm);
     
-    return matchesSearch && matchesStatus;
+    return matchesSearch;
   });
 
-  const handleDelete = async (id: string, departmentName: string) => {
+  const handleDelete = async (departamento: string, departmentName: string) => {
     if (window.confirm(`Tem certeza que deseja excluir o departamento "${departmentName}"?`)) {
-      setDeletingId(id);
+      setDeletingId(departamento);
       try {
-        await deleteExistingDepartment(id);
+        await deleteExistingDepartment(departamento);
         alert('Departamento excluído com sucesso!');
       } catch (error) {
         console.error('Error deleting department:', error);
@@ -60,12 +56,11 @@ const DepartmentList: React.FC = () => {
 
   const clearAllFilters = () => {
     setSearchTerm('');
-    setStatusFilter('');
   };
 
   const columns = [
     {
-      key: 'code',
+      key: 'departamento',
       label: 'Código',
       render: (value: number) => (
         <div className="flex items-center space-x-2">
@@ -77,48 +72,15 @@ const DepartmentList: React.FC = () => {
       )
     },
     {
-      key: 'name',
-      label: 'Nome',
+      key: 'descricao',
+      label: 'Descrição',
       render: (value: string, row: any) => (
         <div>
           <p className="font-medium text-gray-900 dark:text-white">{value}</p>
-          {row.description && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs" title={row.description}>
-              {row.description}
-            </p>
-          )}
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {value.length}/40 caracteres
+          </p>
         </div>
-      )
-    },
-    {
-      key: 'description',
-      label: 'Descrição',
-      render: (value: string) => (
-        <div className="max-w-md">
-          {value ? (
-            <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2" title={value}>
-              {value}
-            </p>
-          ) : (
-            <span className="text-sm text-gray-400 dark:text-gray-500 italic">Sem descrição</span>
-          )}
-        </div>
-      )
-    },
-    {
-      key: 'status',
-      label: 'Status',
-      render: (value: string) => (
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-          value === 'active'
-            ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-            : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-        }`}>
-          <div className={`w-2 h-2 rounded-full mr-1 ${
-            value === 'active' ? 'bg-green-500' : 'bg-red-500'
-          }`} />
-          {value === 'active' ? 'Ativo' : 'Inativo'}
-        </span>
       )
     },
     {
@@ -138,58 +100,34 @@ const DepartmentList: React.FC = () => {
       render: (_: any, row: any) => (
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => navigate(`/registrations/departments/${row.id}`)}
+            onClick={() => navigate(`/registrations/departments/${row.departamento}`)}
             className="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
             title="Visualizar"
           >
             <Eye className="w-4 h-4" />
           </button>
           <button
-            onClick={() => navigate(`/registrations/departments/${row.id}/edit`)}
+            onClick={() => navigate(`/registrations/departments/${row.departamento}/edit`)}
             className="p-1 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
             title="Editar"
           >
             <Edit className="w-4 h-4" />
           </button>
           <button
-            onClick={() => handleDelete(row.id, row.name)}
-            disabled={deletingId === row.id}
+            onClick={() => handleDelete(row.departamento.toString(), row.descricao)}
+            disabled={deletingId === row.departamento.toString()}
             className="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors disabled:opacity-50"
             title="Excluir"
           >
-            {deletingId === row.id ? (
+            {deletingId === row.departamento.toString() ? (
               <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
             ) : (
               <Trash2 className="w-4 h-4" />
             )}
           </button>
-          <div className="relative group">
-            <button className="p-1 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors">
-              <MoreVertical className="w-4 h-4" />
-            </button>
-            <div className="absolute right-0 top-8 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
-              <div className="p-1">
-                <button className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
-                  Duplicar Departamento
-                </button>
-                <button className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
-                  Exportar Dados
-                </button>
-                <button className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
-                  Histórico de Alterações
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
       )
     }
-  ];
-
-  const statusOptions = [
-    { value: '', label: 'Todos os status' },
-    { value: 'active', label: 'Ativo' },
-    { value: 'inactive', label: 'Inativo' }
   ];
 
   const stats = {
@@ -205,7 +143,7 @@ const DepartmentList: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Departamentos</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-2">
-            Gerencie todos os departamentos da empresa ({departments.length} departamentos)
+            Gerencie todos os departamentos da tabela HNDEPARTAMENTO ({departments.length} departamentos)
           </p>
         </div>
         <div className="flex items-center space-x-3">
@@ -306,7 +244,7 @@ const DepartmentList: React.FC = () => {
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Usuários</p>
               <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.totalUsers}</p>
             </div>
-            <FileText className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+            <Hash className="w-8 h-8 text-purple-600 dark:text-purple-400" />
           </div>
         </Card>
       </div>
@@ -317,7 +255,7 @@ const DepartmentList: React.FC = () => {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 lg:space-x-4">
             <div className="flex-1">
               <Input
-                placeholder="Pesquisar departamentos por código, nome ou descrição..."
+                placeholder="Pesquisar departamentos por código ou descrição..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="max-w-md"
@@ -336,28 +274,8 @@ const DepartmentList: React.FC = () => {
             </div>
           </div>
 
-          {/* Advanced Filters */}
-          {showFilters && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <Select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                options={statusOptions}
-                className="w-full"
-              />
-              <div className="flex items-center justify-end">
-                <button
-                  onClick={clearAllFilters}
-                  className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
-                >
-                  Limpar filtros
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Results Summary */}
-          {(searchTerm || statusFilter) && (
+          {searchTerm && (
             <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
               <p className="text-sm text-blue-800 dark:text-blue-300">
                 Mostrando {filteredDepartments.length} de {departments.length} departamentos
@@ -374,7 +292,7 @@ const DepartmentList: React.FC = () => {
           <Table
             columns={columns}
             data={filteredDepartments}
-            onRowClick={(department) => navigate(`/registrations/departments/${department.id}`)}
+            onRowClick={(department) => navigate(`/registrations/departments/${department.departamento}`)}
             loading={loading}
             emptyMessage="Nenhum departamento encontrado"
           />
@@ -401,6 +319,26 @@ const DepartmentList: React.FC = () => {
           </div>
         </Card>
       )}
+
+      {/* Oracle Database Info */}
+      <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+        <div className="flex items-start space-x-3">
+          <div className="flex-shrink-0">
+            <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center">
+              <Hash className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            </div>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-1">
+              Tabela Oracle HNDEPARTAMENTO
+            </h3>
+            <p className="text-sm text-blue-800 dark:text-blue-400">
+              Os dados dos departamentos são armazenados na tabela HNDEPARTAMENTO do Oracle Database. 
+              Campos: DEPARTAMENTO (código numérico), DESCRICAO (descrição até 40 caracteres).
+            </p>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 };

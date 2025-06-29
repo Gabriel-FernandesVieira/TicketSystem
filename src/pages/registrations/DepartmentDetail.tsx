@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, Building2, Hash, User, MapPin, DollarSign, Calendar, Users, FileText, Trash2, AlertTriangle, Eye } from 'lucide-react';
+import { ArrowLeft, Edit, Building2, Hash, User, Calendar, Trash2, AlertTriangle, Eye } from 'lucide-react';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import { useDepartment, useDepartments } from '../../hooks/useDepartments';
@@ -16,9 +16,9 @@ const DepartmentDetail: React.FC = () => {
   const handleDelete = async () => {
     if (!department) return;
     
-    if (window.confirm(`Tem certeza que deseja excluir o departamento "${department.name}"?`)) {
+    if (window.confirm(`Tem certeza que deseja excluir o departamento "${department.descricao}"?`)) {
       try {
-        await deleteExistingDepartment(department.id);
+        await deleteExistingDepartment(department.departamento.toString());
         navigate('/registrations/departments');
       } catch (error) {
         console.error('Error deleting department:', error);
@@ -67,8 +67,7 @@ const DepartmentDetail: React.FC = () => {
     totalUsers: departmentUsers.length,
     activeUsers: departmentUsers.filter(u => u.status === 'active').length,
     inactiveUsers: departmentUsers.filter(u => u.status === 'inactive').length,
-    avgSalary: 8500,
-    totalBudgetUsed: department.budget ? department.budget * 0.75 : 0
+    descriptionLength: department.descricao.length
   };
 
   return (
@@ -84,10 +83,10 @@ const DepartmentDetail: React.FC = () => {
           </Button>
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              {department.name}
+              {department.descricao}
             </h1>
             <p className="text-gray-500 dark:text-gray-400 mt-1">
-              Código: {department.code} • {department.description}
+              Código: {department.departamento}
             </p>
           </div>
         </div>
@@ -102,7 +101,7 @@ const DepartmentDetail: React.FC = () => {
           </Button>
           <Button
             icon={Edit}
-            onClick={() => navigate(`/registrations/departments/${department.id}/edit`)}
+            onClick={() => navigate(`/registrations/departments/${department.departamento}/edit`)}
           >
             Editar
           </Button>
@@ -113,21 +112,18 @@ const DepartmentDetail: React.FC = () => {
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           <Card title="Informações do Departamento">
-            <div className="prose dark:prose-invert max-w-none">
-              <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                {department.description}
-              </p>
-              
-              {department.notes && (
-                <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <h4 className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">
-                    Observações Adicionais
-                  </h4>
-                  <p className="text-sm text-blue-800 dark:text-blue-400">
-                    {department.notes}
-                  </p>
-                </div>
-              )}
+            <div className="space-y-4">
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                <h4 className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">
+                  Descrição Completa
+                </h4>
+                <p className="text-blue-800 dark:text-blue-400 text-lg">
+                  {department.descricao}
+                </p>
+                <p className="text-xs text-blue-600 dark:text-blue-500 mt-2">
+                  {department.descricao.length}/40 caracteres utilizados
+                </p>
+              </div>
             </div>
           </Card>
 
@@ -138,7 +134,7 @@ const DepartmentDetail: React.FC = () => {
                   Membros da Equipe ({departmentUsers.length})
                 </h3>
                 <Button size="sm" variant="outline">
-                  <Users className="w-4 h-4 mr-2" />
+                  <User className="w-4 h-4 mr-2" />
                   Gerenciar Usuários
                 </Button>
               </div>
@@ -165,7 +161,7 @@ const DepartmentDetail: React.FC = () => {
                         {user.status === 'active' ? 'Ativo' : 'Inativo'}
                       </span>
                       <button
-                        onClick={() => navigate(`/registrations/users/${user.id}`)}
+                        onClick={() => navigate(`/registrations/users/${user.email}`)}
                         className="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                         title="Visualizar usuário"
                       >
@@ -181,7 +177,7 @@ const DepartmentDetail: React.FC = () => {
           <Card title="Estatísticas do Departamento">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <Users className="w-8 h-8 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
+                <User className="w-8 h-8 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{departmentStats.totalUsers}</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Total de Usuários</p>
               </div>
@@ -192,20 +188,16 @@ const DepartmentDetail: React.FC = () => {
                 <p className="text-sm text-gray-600 dark:text-gray-400">Usuários Ativos</p>
               </div>
               
-              <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                <DollarSign className="w-8 h-8 text-yellow-600 dark:text-yellow-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                  R$ {(departmentStats.avgSalary / 1000).toFixed(1)}k
-                </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Salário Médio</p>
+              <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                <User className="w-8 h-8 text-red-600 dark:text-red-400 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-red-600 dark:text-red-400">{departmentStats.inactiveUsers}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Usuários Inativos</p>
               </div>
               
               <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                <FileText className="w-8 h-8 text-purple-600 dark:text-purple-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                  {Math.round((departmentStats.totalBudgetUsed / (department.budget || 1)) * 100)}%
-                </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Orçamento Usado</p>
+                <Hash className="w-8 h-8 text-purple-600 dark:text-purple-400 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{departmentStats.descriptionLength}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Caracteres</p>
               </div>
             </div>
           </Card>
@@ -213,155 +205,89 @@ const DepartmentDetail: React.FC = () => {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <Card title="Informações Gerais">
+          <Card title="Informações da Tabela">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Código</label>
+                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Código (DEPARTAMENTO)</label>
                 <div className="flex items-center space-x-2">
                   <Hash className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                  <span className="text-gray-900 dark:text-white font-medium">{department.code}</span>
+                  <span className="text-gray-900 dark:text-white font-medium text-lg">{department.departamento}</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Status</label>
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  department.status === 'active'
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                    : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                }`}>
-                  <div className={`w-2 h-2 rounded-full mr-1 ${
-                    department.status === 'active' ? 'bg-green-500' : 'bg-red-500'
-                  }`} />
-                  {department.status === 'active' ? 'Ativo' : 'Inativo'}
-                </span>
-              </div>
-
-              {department.manager && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Gestor Responsável</label>
-                  <div className="flex items-center space-x-2">
-                    <User className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                    <span className="text-gray-900 dark:text-white">{department.manager}</span>
-                  </div>
+                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Descrição (DESCRICAO)</label>
+                <div className="mt-1 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <p className="text-gray-900 dark:text-white break-words">{department.descricao}</p>
                 </div>
-              )}
-
-              {department.location && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Localização</label>
-                  <div className="flex items-center space-x-2">
-                    <MapPin className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                    <span className="text-gray-900 dark:text-white">{department.location}</span>
-                  </div>
-                </div>
-              )}
-
-              {department.budget && department.budget > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Orçamento Anual</label>
-                  <div className="flex items-center space-x-2">
-                    <DollarSign className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                    <span className="text-2xl font-bold text-green-600 dark:text-green-400">
-                      R$ {department.budget.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  {departmentStats.totalBudgetUsed > 0 && (
-                    <div className="mt-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">Usado</span>
-                        <span className="font-medium text-gray-900 dark:text-white">
-                          R$ {departmentStats.totalBudgetUsed.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-1">
-                        <div
-                          className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${Math.min((departmentStats.totalBudgetUsed / department.budget) * 100, 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {department.costCenter && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Centro de Custo</label>
-                  <span className="text-gray-900 dark:text-white font-mono">{department.costCenter}</span>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Data de Criação</label>
-                <div className="flex items-center space-x-2">
-                  <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                  <span className="text-gray-900 dark:text-white">
-                    {department.createdAt ? format(new Date(department.createdAt), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado'}
+                <div className="mt-2 flex items-center justify-between text-xs">
+                  <span className="text-gray-500 dark:text-gray-400">Caracteres utilizados</span>
+                  <span className={`font-medium ${
+                    department.descricao.length > 35 ? 'text-red-600 dark:text-red-400' :
+                    department.descricao.length > 25 ? 'text-yellow-600 dark:text-yellow-400' :
+                    'text-green-600 dark:text-green-400'
+                  }`}>
+                    {department.descricao.length}/40
                   </span>
                 </div>
+                <div className="mt-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1">
+                  <div
+                    className={`h-1 rounded-full transition-all duration-300 ${
+                      department.descricao.length > 35 ? 'bg-red-500' :
+                      department.descricao.length > 25 ? 'bg-yellow-500' : 'bg-green-500'
+                    }`}
+                    style={{ width: `${(department.descricao.length / 40) * 100}%` }}
+                  />
+                </div>
               </div>
+
+              {department.createdAt && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Data de Criação</label>
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                    <span className="text-gray-900 dark:text-white">
+                      {format(new Date(department.createdAt), 'dd/MM/yyyy', { locale: ptBR })}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </Card>
 
           <Card title="Ações Rápidas">
             <div className="space-y-3">
               <Button variant="outline" className="w-full">
-                <Users className="w-4 h-4 mr-2" />
+                <User className="w-4 h-4 mr-2" />
                 Adicionar Usuário
               </Button>
               
               <Button variant="outline" className="w-full">
-                <FileText className="w-4 h-4 mr-2" />
-                Gerar Relatório
+                <Building2 className="w-4 h-4 mr-2" />
+                Organograma
               </Button>
               
               <Button variant="outline" className="w-full">
-                <DollarSign className="w-4 h-4 mr-2" />
-                Controle Orçamentário
-              </Button>
-
-              <Button variant="outline" className="w-full">
-                <Building2 className="w-4 h-4 mr-2" />
-                Organograma
+                <Hash className="w-4 h-4 mr-2" />
+                Relatório de Usuários
               </Button>
             </div>
           </Card>
 
-          <Card title="Resumo Financeiro">
+          <Card title="Informações do Oracle">
             <div className="space-y-4">
-              {department.budget && department.budget > 0 ? (
-                <>
-                  <div className="text-center">
-                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Orçamento Total</p>
-                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                      R$ {(department.budget / 1000).toFixed(0)}k
-                    </p>
-                  </div>
+              <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <Hash className="w-8 h-8 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-300">Tabela HNDEPARTAMENTO</p>
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                  Oracle Database
+                </p>
+              </div>
 
-                  <div className="grid grid-cols-2 gap-4 text-center">
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Usado</p>
-                      <p className="text-lg font-semibold text-red-600 dark:text-red-400">
-                        R$ {(departmentStats.totalBudgetUsed / 1000).toFixed(0)}k
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Disponível</p>
-                      <p className="text-lg font-semibold text-green-600 dark:text-green-400">
-                        R$ {((department.budget - departmentStats.totalBudgetUsed) / 1000).toFixed(0)}k
-                      </p>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="text-center py-4">
-                  <DollarSign className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Orçamento não definido
-                  </p>
-                </div>
-              )}
+              <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                <p><strong>DEPARTAMENTO:</strong> Chave primária numérica</p>
+                <p><strong>DESCRICAO:</strong> VARCHAR2(40) NOT NULL</p>
+              </div>
             </div>
           </Card>
         </div>
