@@ -1,4 +1,3 @@
-import { apiRequest, ApiError } from './api';
 import { User } from '../types';
 
 export interface CreateUserRequest {
@@ -28,47 +27,78 @@ export interface UserFilters {
   limit?: number;
 }
 
-// Fetch all users with optional filters
-export async function fetchUsers(filters: UserFilters = {}): Promise<UsersResponse> {
-  const queryParams = new URLSearchParams();
-  
-  Object.entries(filters).forEach(([key, value]) => {
-    if (value !== undefined && value !== '') {
-      queryParams.append(key, value.toString());
-    }
-  });
-
-  const queryString = queryParams.toString();
-  const endpoint = `Autenticacao/GetAllUsers${queryString ? `?${queryString}` : ''}`;
-
-  try {
-    const response = await apiRequest<any>(endpoint);
-    
-    // Transform Oracle response to match our User interface
-    const transformedUsers = (response.data || response || []).map((oracleUser: any) => ({
-      id: oracleUser.emailsist || oracleUser.EMAILSIST,
-      email: oracleUser.emailsist || oracleUser.EMAILSIST,
-      name: oracleUser.nome || oracleUser.NOME,
-      status: (oracleUser.status || oracleUser.STATUS) === 1 ? 'active' : 'inactive',
-      department: getDepartmentName(oracleUser.departamento || oracleUser.DEPARTAMENTO),
-      role: getUserRole(oracleUser.departamento || oracleUser.DEPARTAMENTO),
-      // Keep original Oracle fields
-      emailsist: oracleUser.emailsist || oracleUser.EMAILSIST,
-      nome: oracleUser.nome || oracleUser.NOME,
-      departamento: oracleUser.departamento || oracleUser.DEPARTAMENTO
-    }));
-
-    return {
-      users: transformedUsers,
-      total: transformedUsers.length,
-      page: filters.page || 1,
-      limit: filters.limit || 10
-    };
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    throw error;
+// Mock data store
+let mockUsers: User[] = [
+  {
+    id: 'admin@empresa.com',
+    email: 'admin@empresa.com',
+    name: 'Administrador Sistema',
+    status: 'active',
+    department: 'Tecnologia da Informação',
+    role: 'admin',
+    emailsist: 'admin@empresa.com',
+    nome: 'Administrador Sistema',
+    departamento: 1
+  },
+  {
+    id: 'joao.silva@empresa.com',
+    email: 'joao.silva@empresa.com',
+    name: 'João Silva',
+    status: 'active',
+    department: 'Comercial',
+    role: 'user',
+    emailsist: 'joao.silva@empresa.com',
+    nome: 'João Silva',
+    departamento: 3
+  },
+  {
+    id: 'maria.santos@empresa.com',
+    email: 'maria.santos@empresa.com',
+    name: 'Maria Santos',
+    status: 'active',
+    department: 'Financeiro',
+    role: 'manager',
+    emailsist: 'maria.santos@empresa.com',
+    nome: 'Maria Santos',
+    departamento: 4
+  },
+  {
+    id: 'pedro.costa@empresa.com',
+    email: 'pedro.costa@empresa.com',
+    name: 'Pedro Costa',
+    status: 'inactive',
+    department: 'Atendimento ao Cliente',
+    role: 'support',
+    emailsist: 'pedro.costa@empresa.com',
+    nome: 'Pedro Costa',
+    departamento: 2
+  },
+  {
+    id: 'ana.oliveira@empresa.com',
+    email: 'ana.oliveira@empresa.com',
+    name: 'Ana Oliveira',
+    status: 'active',
+    department: 'Recursos Humanos',
+    role: 'manager',
+    emailsist: 'ana.oliveira@empresa.com',
+    nome: 'Ana Oliveira',
+    departamento: 5
+  },
+  {
+    id: 'carlos.ferreira@empresa.com',
+    email: 'carlos.ferreira@empresa.com',
+    name: 'Carlos Ferreira',
+    status: 'active',
+    department: 'Marketing',
+    role: 'user',
+    emailsist: 'carlos.ferreira@empresa.com',
+    nome: 'Carlos Ferreira',
+    departamento: 6
   }
-}
+];
+
+// Helper function to simulate API delay
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Helper function to map department number to name
 function getDepartmentName(departmentCode: number): string {
@@ -96,176 +126,178 @@ function getUserRole(departmentCode: number): 'admin' | 'manager' | 'user' | 'su
   return roleMapping[departmentCode] || 'user';
 }
 
+// Fetch all users with optional filters
+export async function fetchUsers(filters: UserFilters = {}): Promise<UsersResponse> {
+  await delay(300); // Simulate network delay
+
+  let filteredUsers = [...mockUsers];
+
+  // Apply filters
+  if (filters.search) {
+    const searchLower = filters.search.toLowerCase();
+    filteredUsers = filteredUsers.filter(user => 
+      user.name.toLowerCase().includes(searchLower) ||
+      user.email.toLowerCase().includes(searchLower) ||
+      user.department.toLowerCase().includes(searchLower)
+    );
+  }
+
+  if (filters.status !== undefined) {
+    const statusFilter = filters.status === 1 ? 'active' : 'inactive';
+    filteredUsers = filteredUsers.filter(user => user.status === statusFilter);
+  }
+
+  if (filters.departamento !== undefined) {
+    filteredUsers = filteredUsers.filter(user => user.departamento === filters.departamento);
+  }
+
+  // Apply pagination
+  const page = filters.page || 1;
+  const limit = filters.limit || 10;
+  const startIndex = (page - 1) * limit;
+  const endIndex = startIndex + limit;
+  const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+
+  return {
+    users: paginatedUsers,
+    total: filteredUsers.length,
+    page,
+    limit
+  };
+}
+
 // Fetch a single user by email
 export async function fetchUserByEmail(email: string): Promise<User> {
-  try {
-    const response = await apiRequest<any>(`Autenticacao/GetUser?email=${encodeURIComponent(email)}`);
-    
-    // Transform Oracle response
-    const oracleUser = response.data || response;
-    return {
-      id: oracleUser.emailsist || oracleUser.EMAILSIST,
-      email: oracleUser.emailsist || oracleUser.EMAILSIST,
-      name: oracleUser.nome || oracleUser.NOME,
-      status: (oracleUser.status || oracleUser.STATUS) === 1 ? 'active' : 'inactive',
-      department: getDepartmentName(oracleUser.departamento || oracleUser.DEPARTAMENTO),
-      role: getUserRole(oracleUser.departamento || oracleUser.DEPARTAMENTO),
-      emailsist: oracleUser.emailsist || oracleUser.EMAILSIST,
-      nome: oracleUser.nome || oracleUser.NOME,
-      departamento: oracleUser.departamento || oracleUser.DEPARTAMENTO
-    };
-  } catch (error) {
-    console.error(`Error fetching user ${email}:`, error);
-    throw error;
+  await delay(200);
+
+  const user = mockUsers.find(u => u.email === email);
+  if (!user) {
+    throw new Error(`User with email ${email} not found`);
   }
+
+  return user;
 }
 
 // Create a new user
 export async function createUser(userData: CreateUserRequest): Promise<User> {
-  try {
-    const response = await apiRequest<any>('Autenticacao/PostUser', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
+  await delay(400);
 
-    // Transform response to User interface
-    const createdUser = response.data || response;
-    return {
-      id: createdUser.emailsist || userData.emailsist,
-      email: createdUser.emailsist || userData.emailsist,
-      name: createdUser.nome || userData.nome,
-      status: (createdUser.status || userData.status) === 1 ? 'active' : 'inactive',
-      department: getDepartmentName(createdUser.departamento || userData.departamento || 0),
-      role: getUserRole(createdUser.departamento || userData.departamento || 0),
-      emailsist: createdUser.emailsist || userData.emailsist,
-      nome: createdUser.nome || userData.nome,
-      departamento: createdUser.departamento || userData.departamento
-    };
-  } catch (error) {
-    console.error('Error creating user:', error);
-    throw error;
+  // Check if user already exists
+  const existingUser = mockUsers.find(u => u.email === userData.emailsist);
+  if (existingUser) {
+    throw new Error('User with this email already exists');
   }
+
+  const newUser: User = {
+    id: userData.emailsist,
+    email: userData.emailsist,
+    name: userData.nome,
+    status: userData.status === 1 ? 'active' : 'inactive',
+    department: getDepartmentName(userData.departamento || 0),
+    role: getUserRole(userData.departamento || 0),
+    emailsist: userData.emailsist,
+    nome: userData.nome,
+    departamento: userData.departamento
+  };
+
+  mockUsers.push(newUser);
+  return newUser;
 }
 
 // Update an existing user
 export async function updateUser(email: string, userData: Partial<UpdateUserRequest>): Promise<User> {
-  try {
-    const response = await apiRequest<any>(`Autenticacao/PutUser?email=${encodeURIComponent(email)}`, {
-      method: 'PUT',
-      body: JSON.stringify(userData),
-    });
+  await delay(350);
 
-    // Transform response
-    const updatedUser = response.data || response;
-    return {
-      id: updatedUser.emailsist || email,
-      email: updatedUser.emailsist || email,
-      name: updatedUser.nome || userData.nome || '',
-      status: (updatedUser.status || userData.status) === 1 ? 'active' : 'inactive',
-      department: getDepartmentName(updatedUser.departamento || userData.departamento || 0),
-      role: getUserRole(updatedUser.departamento || userData.departamento || 0),
-      emailsist: updatedUser.emailsist || email,
-      nome: updatedUser.nome || userData.nome,
-      departamento: updatedUser.departamento || userData.departamento
-    };
-  } catch (error) {
-    console.error(`Error updating user ${email}:`, error);
-    throw error;
+  const userIndex = mockUsers.findIndex(u => u.email === email);
+  if (userIndex === -1) {
+    throw new Error(`User with email ${email} not found`);
   }
+
+  const existingUser = mockUsers[userIndex];
+  const updatedUser: User = {
+    ...existingUser,
+    name: userData.nome || existingUser.name,
+    status: userData.status !== undefined ? (userData.status === 1 ? 'active' : 'inactive') : existingUser.status,
+    department: userData.departamento !== undefined ? getDepartmentName(userData.departamento) : existingUser.department,
+    role: userData.departamento !== undefined ? getUserRole(userData.departamento) : existingUser.role,
+    nome: userData.nome || existingUser.nome,
+    departamento: userData.departamento !== undefined ? userData.departamento : existingUser.departamento
+  };
+
+  mockUsers[userIndex] = updatedUser;
+  return updatedUser;
 }
 
 // Delete a user
 export async function deleteUser(email: string): Promise<void> {
-  try {
-    await apiRequest<void>(`Autenticacao/DeleteUser?email=${encodeURIComponent(email)}`, {
-      method: 'DELETE',
-    });
-  } catch (error) {
-    console.error(`Error deleting user ${email}:`, error);
-    throw error;
+  await delay(300);
+
+  const userIndex = mockUsers.findIndex(u => u.email === email);
+  if (userIndex === -1) {
+    throw new Error(`User with email ${email} not found`);
   }
+
+  mockUsers.splice(userIndex, 1);
 }
 
 // Reset user password
 export async function resetUserPassword(email: string, newPassword: string): Promise<void> {
-  try {
-    await apiRequest<void>(`Autenticacao/ResetPassword`, {
-      method: 'POST',
-      body: JSON.stringify({ 
-        emailsist: email, 
-        senha: newPassword 
-      }),
-    });
-  } catch (error) {
-    console.error(`Error resetting password for user ${email}:`, error);
-    throw error;
+  await delay(250);
+
+  const user = mockUsers.find(u => u.email === email);
+  if (!user) {
+    throw new Error(`User with email ${email} not found`);
   }
+
+  // In a real implementation, this would update the password in the database
+  console.log(`Password reset for user ${email}`);
 }
 
-// Upload user avatar (if supported by your backend)
+// Upload user avatar (mock implementation)
 export async function uploadUserAvatar(email: string, file: File): Promise<{ avatarUrl: string }> {
-  const formData = new FormData();
-  formData.append('avatar', file);
-  formData.append('email', email);
+  await delay(800);
 
-  try {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || '/api'}/users/avatar`, {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'Authorization': `Bearer ${JSON.parse(localStorage.getItem('user') || '{}').token || ''}`,
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new ApiError(
-        errorData.message || 'Failed to upload avatar',
-        response.status,
-        errorData
-      );
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error(`Error uploading avatar for user ${email}:`, error);
-    throw error;
+  const user = mockUsers.find(u => u.email === email);
+  if (!user) {
+    throw new Error(`User with email ${email} not found`);
   }
+
+  // Mock avatar URL
+  const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name)}`;
+  
+  return { avatarUrl };
 }
 
 // Bulk operations
 export async function bulkUpdateUsers(emails: string[], updates: Partial<CreateUserRequest>): Promise<User[]> {
-  try {
-    const response = await apiRequest<any[]>('Autenticacao/BulkUpdateUsers', {
-      method: 'POST',
-      body: JSON.stringify({ emails, updates }),
-    });
+  await delay(600);
 
-    return response.map(user => ({
-      id: user.emailsist,
-      email: user.emailsist,
-      name: user.nome,
-      status: user.status === 1 ? 'active' : 'inactive',
-      department: getDepartmentName(user.departamento),
-      role: getUserRole(user.departamento),
-      emailsist: user.emailsist,
-      nome: user.nome,
-      departamento: user.departamento
-    }));
-  } catch (error) {
-    console.error('Error bulk updating users:', error);
-    throw error;
+  const updatedUsers: User[] = [];
+
+  for (const email of emails) {
+    const userIndex = mockUsers.findIndex(u => u.email === email);
+    if (userIndex !== -1) {
+      const existingUser = mockUsers[userIndex];
+      const updatedUser: User = {
+        ...existingUser,
+        name: updates.nome || existingUser.name,
+        status: updates.status !== undefined ? (updates.status === 1 ? 'active' : 'inactive') : existingUser.status,
+        department: updates.departamento !== undefined ? getDepartmentName(updates.departamento) : existingUser.department,
+        role: updates.departamento !== undefined ? getUserRole(updates.departamento) : existingUser.role,
+        nome: updates.nome || existingUser.nome,
+        departamento: updates.departamento !== undefined ? updates.departamento : existingUser.departamento
+      };
+
+      mockUsers[userIndex] = updatedUser;
+      updatedUsers.push(updatedUser);
+    }
   }
+
+  return updatedUsers;
 }
 
 export async function bulkDeleteUsers(emails: string[]): Promise<void> {
-  try {
-    await apiRequest<void>('Autenticacao/BulkDeleteUsers', {
-      method: 'POST',
-      body: JSON.stringify({ emails }),
-    });
-  } catch (error) {
-    console.error('Error bulk deleting users:', error);
-    throw error;
-  }
+  await delay(500);
+
+  mockUsers = mockUsers.filter(user => !emails.includes(user.email));
 }
