@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Building2, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
+import AnimatedOctopus from '../components/common/AnimatedOctopus';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -34,14 +35,18 @@ const Login: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-blue-600 rounded-xl flex items-center justify-center">
-            <Building2 className="h-8 w-8 text-white" />
+          <div className="mx-auto h-20 w-20 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center shadow-2xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 to-transparent rounded-full"></div>
+            <div className="relative z-10 transform hover:scale-110 transition-transform duration-300">
+              <AnimatedOctopus />
+            </div>
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full blur opacity-25 animate-pulse"></div>
           </div>
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">
             Sistema de Gestão
           </h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            Faça login em sua conta para continuar
+            Bem-vindo! Faça login para continuar
           </p>
         </div>
 
