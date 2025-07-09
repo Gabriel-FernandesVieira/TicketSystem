@@ -1,102 +1,326 @@
-.octopus {
+.tech-octopus-container {
   position: relative;
-  width: 100px;
-  height: 100px;
-  background: #3c83ff;
-  border-radius: 50%;
+  width: 200px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.circuit-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.3;
+  z-index: 0;
+}
+
+.circuit-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.circuit-line {
+  stroke: #3b82f6;
+  stroke-width: 1;
+  opacity: 0.6;
+  animation: circuit-pulse 3s ease-in-out infinite;
+}
+
+.circuit-node {
+  fill: #3b82f6;
+  animation: node-blink 2s ease-in-out infinite;
+}
+
+.circuit-node-main {
+  fill: #1d4ed8;
+  animation: main-node-pulse 1.5s ease-in-out infinite;
+}
+
+.tech-octopus {
+  position: relative;
   z-index: 1;
   animation: float 4s ease-in-out infinite;
 }
 
+.octopus-head {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 50%, #1e40af 100%);
+  border-radius: 50%;
+  box-shadow: 
+    0 0 20px rgba(59, 130, 246, 0.5),
+    inset 0 0 20px rgba(255, 255, 255, 0.1);
+  z-index: 2;
+}
+
+.head-shine {
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  width: 25px;
+  height: 15px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  transform: rotate(-30deg);
+  animation: shine-pulse 3s ease-in-out infinite;
+}
+
 .octopus-eye {
-  width: 10px;
-  height: 10px;
+  position: absolute;
+  width: 16px;
+  height: 16px;
   background: white;
   border-radius: 50%;
-  position: absolute;
-  top: 35px;
+  top: 25px;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
 }
 
 .octopus-eye.left { 
-  left: 25px; 
+  left: 18px; 
 }
 
 .octopus-eye.right { 
-  right: 25px; 
+  right: 18px; 
 }
 
-.octopus-tentacle {
+.eye-pupil {
   position: absolute;
-  width: 14px;
-  height: 40px;
-  background: #3c83ff;
+  width: 8px;
+  height: 8px;
+  background: #1e40af;
   border-radius: 50%;
-  animation: wave 2s ease-in-out infinite;
+  top: 4px;
+  left: 4px;
+  animation: eye-look 4s ease-in-out infinite;
+}
+
+.eye-shine {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: white;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+}
+
+.tentacle {
+  position: absolute;
+  width: 12px;
   transform-origin: top center;
+  top: 75px;
 }
 
-.octopus-tentacle:nth-child(3) { 
-  left: -10px; 
-  top: 90px; 
-  animation-delay: 0s; 
+.tentacle-segment {
+  width: 12px;
+  height: 20px;
+  background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
+  border-radius: 6px;
+  margin-bottom: 2px;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
 }
 
-.octopus-tentacle:nth-child(4) { 
-  left: 5px; 
-  top: 95px; 
-  animation-delay: 0.2s; 
+.tentacle-1 { 
+  left: -15px; 
+  animation: tentacle-wave-1 2.5s ease-in-out infinite;
 }
 
-.octopus-tentacle:nth-child(5) { 
-  left: 20px; 
-  top: 98px; 
-  animation-delay: 0.4s; 
+.tentacle-2 { 
+  left: 0px; 
+  animation: tentacle-wave-2 2.3s ease-in-out infinite;
 }
 
-.octopus-tentacle:nth-child(6) { 
-  left: 35px; 
-  top: 100px; 
-  animation-delay: 0.6s; 
+.tentacle-3 { 
+  left: 15px; 
+  animation: tentacle-wave-3 2.7s ease-in-out infinite;
 }
 
-.octopus-tentacle:nth-child(7) { 
-  left: 50px; 
-  top: 100px; 
-  animation-delay: 0.8s; 
+.tentacle-4 { 
+  left: 30px; 
+  animation: tentacle-wave-4 2.1s ease-in-out infinite;
 }
 
-.octopus-tentacle:nth-child(8) { 
-  left: 65px; 
-  top: 98px; 
-  animation-delay: 1s; 
+.tentacle-5 { 
+  left: 45px; 
+  animation: tentacle-wave-5 2.4s ease-in-out infinite;
 }
 
-.octopus-tentacle:nth-child(9) { 
-  left: 80px; 
-  top: 95px; 
-  animation-delay: 1.2s; 
+.tentacle-6 { 
+  left: 60px; 
+  animation: tentacle-wave-6 2.6s ease-in-out infinite;
 }
 
-.octopus-tentacle:nth-child(10) { 
-  left: 95px; 
-  top: 90px; 
-  animation-delay: 1.4s; 
+.tentacle-7 { 
+  left: 75px; 
+  animation: tentacle-wave-7 2.2s ease-in-out infinite;
 }
 
-@keyframes wave {
-  0%, 100% { 
-    transform: rotate(0deg); 
-  }
-  50% { 
-    transform: rotate(20deg); 
-  }
+.tentacle-8 { 
+  left: 90px; 
+  animation: tentacle-wave-8 2.8s ease-in-out infinite;
 }
 
+/* Animations */
 @keyframes float {
   0%, 100% { 
-    transform: translateY(0); 
+    transform: translateY(0) rotate(0deg); 
+  }
+  25% { 
+    transform: translateY(-8px) rotate(1deg); 
   }
   50% { 
-    transform: translateY(-10px); 
+    transform: translateY(-5px) rotate(0deg); 
+  }
+  75% { 
+    transform: translateY(-10px) rotate(-1deg); 
+  }
+}
+
+@keyframes circuit-pulse {
+  0%, 100% { 
+    opacity: 0.3; 
+  }
+  50% { 
+    opacity: 0.8; 
+  }
+}
+
+@keyframes node-blink {
+  0%, 100% { 
+    opacity: 0.6; 
+  }
+  50% { 
+    opacity: 1; 
+  }
+}
+
+@keyframes main-node-pulse {
+  0%, 100% { 
+    transform: scale(1); 
+    opacity: 0.8; 
+  }
+  50% { 
+    transform: scale(1.3); 
+    opacity: 1; 
+  }
+}
+
+@keyframes shine-pulse {
+  0%, 100% { 
+    opacity: 0.4; 
+  }
+  50% { 
+    opacity: 0.8; 
+  }
+}
+
+@keyframes eye-look {
+  0%, 100% { 
+    transform: translateX(0); 
+  }
+  25% { 
+    transform: translateX(2px); 
+  }
+  75% { 
+    transform: translateX(-2px); 
+  }
+}
+
+@keyframes tentacle-wave-1 {
+  0%, 100% { 
+    transform: rotate(-15deg) translateY(0); 
+  }
+  50% { 
+    transform: rotate(25deg) translateY(-5px); 
+  }
+}
+
+@keyframes tentacle-wave-2 {
+  0%, 100% { 
+    transform: rotate(-10deg) translateY(0); 
+  }
+  50% { 
+    transform: rotate(20deg) translateY(-3px); 
+  }
+}
+
+@keyframes tentacle-wave-3 {
+  0%, 100% { 
+    transform: rotate(-5deg) translateY(0); 
+  }
+  50% { 
+    transform: rotate(15deg) translateY(-4px); 
+  }
+}
+
+@keyframes tentacle-wave-4 {
+  0%, 100% { 
+    transform: rotate(0deg) translateY(0); 
+  }
+  50% { 
+    transform: rotate(10deg) translateY(-6px); 
+  }
+}
+
+@keyframes tentacle-wave-5 {
+  0%, 100% { 
+    transform: rotate(0deg) translateY(0); 
+  }
+  50% { 
+    transform: rotate(-10deg) translateY(-6px); 
+  }
+}
+
+@keyframes tentacle-wave-6 {
+  0%, 100% { 
+    transform: rotate(5deg) translateY(0); 
+  }
+  50% { 
+    transform: rotate(-15deg) translateY(-4px); 
+  }
+}
+
+@keyframes tentacle-wave-7 {
+  0%, 100% { 
+    transform: rotate(10deg) translateY(0); 
+  }
+  50% { 
+    transform: rotate(-20deg) translateY(-3px); 
+  }
+}
+
+@keyframes tentacle-wave-8 {
+  0%, 100% { 
+    transform: rotate(15deg) translateY(0); 
+  }
+  50% { 
+    transform: rotate(-25deg) translateY(-5px); 
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .tech-octopus-container {
+    width: 150px;
+    height: 150px;
+  }
+  
+  .octopus-head {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .tentacle {
+    width: 10px;
+    top: 55px;
+  }
+  
+  .tentacle-segment {
+    width: 10px;
+    height: 15px;
   }
 }
