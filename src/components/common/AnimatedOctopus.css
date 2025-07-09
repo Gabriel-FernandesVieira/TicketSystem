@@ -5,9 +5,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #000000 0%, #1a1a2e 50%, #16213e 100%);
+  background: linear-gradient(135deg, #000000 0%, #0a0a1a 30%, #1a1a2e 70%, #16213e 100%);
   border-radius: 20px;
   overflow: hidden;
+  box-shadow: 
+    inset 0 0 50px rgba(0, 191, 255, 0.1),
+    0 0 30px rgba(0, 0, 0, 0.8);
 }
 
 .circuit-background {
@@ -28,83 +31,162 @@
   stroke: #00bfff;
   stroke-width: 2;
   opacity: 0.8;
+  filter: drop-shadow(0 0 8px #00bfff);
   animation: circuit-glow 2s ease-in-out infinite alternate;
 }
 
 .circuit-node {
   fill: #00bfff;
+  filter: drop-shadow(0 0 10px #00bfff);
   animation: node-pulse 1.5s ease-in-out infinite;
 }
 
 .circuit-node-small {
   fill: #00bfff;
   opacity: 0.7;
+  filter: drop-shadow(0 0 5px #00bfff);
   animation: small-node-blink 2s ease-in-out infinite;
 }
 
 .octopus-main {
   position: relative;
   z-index: 2;
-  animation: octopus-float 3s ease-in-out infinite;
+  animation: octopus-float 4s ease-in-out infinite;
+  filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.6));
 }
 
 .octopus-head {
   position: relative;
   width: 100px;
   height: 100px;
-  background: linear-gradient(135deg, #4a90e2 0%, #357abd 50%, #2e5f8a 100%);
+  background: 
+    radial-gradient(ellipse at 30% 20%, rgba(255, 255, 255, 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(0, 191, 255, 0.3) 0%, transparent 60%),
+    linear-gradient(135deg, #5ba3f5 0%, #4a90e2 25%, #357abd 50%, #2e5f8a 75%, #1e3a5f 100%);
   border-radius: 50%;
   box-shadow: 
-    0 0 30px rgba(74, 144, 226, 0.6),
-    inset 0 0 20px rgba(255, 255, 255, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.1);
+    0 0 40px rgba(74, 144, 226, 0.8),
+    inset 0 0 30px rgba(255, 255, 255, 0.15),
+    inset 0 -20px 20px rgba(0, 0, 0, 0.3),
+    inset 20px 0 20px rgba(255, 255, 255, 0.1);
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  animation: head-breathing 3s ease-in-out infinite;
+}
+
+.octopus-head::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(ellipse at 25% 25%, rgba(255, 255, 255, 0.6) 0%, transparent 40%),
+    radial-gradient(ellipse at 75% 75%, rgba(0, 0, 0, 0.3) 0%, transparent 50%);
+  border-radius: 50%;
+  animation: surface-ripple 2.5s ease-in-out infinite;
 }
 
 .head-highlight {
   position: absolute;
-  top: 20px;
-  left: 25px;
-  width: 40px;
-  height: 25px;
-  background: rgba(255, 255, 255, 0.6);
+  top: 15px;
+  left: 20px;
+  width: 50px;
+  height: 30px;
+  background: 
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.4) 60%, transparent 100%);
   border-radius: 50%;
-  transform: rotate(-20deg);
-  animation: highlight-shimmer 2.5s ease-in-out infinite;
+  transform: rotate(-25deg);
+  animation: highlight-shimmer 3s ease-in-out infinite;
+  filter: blur(0.5px);
+}
+
+.head-highlight::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 10px;
+  width: 15px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  animation: micro-highlight 2s ease-in-out infinite;
 }
 
 .octopus-eye {
   position: absolute;
-  width: 20px;
-  height: 12px;
-  background: white;
-  top: 35px;
-  clip-path: polygon(0% 50%, 30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%);
+  width: 22px;
+  height: 14px;
+  background: 
+    linear-gradient(45deg, #ffffff 0%, #f0f8ff 50%, #e6f3ff 100%);
+  top: 32px;
+  clip-path: polygon(0% 50%, 25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%);
   animation: eye-glow 2s ease-in-out infinite alternate;
+  box-shadow: 
+    0 0 20px rgba(255, 255, 255, 0.8),
+    inset 0 0 10px rgba(0, 191, 255, 0.3);
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.6));
+}
+
+.octopus-eye::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  width: 4px;
+  height: 4px;
+  background: rgba(0, 191, 255, 0.8);
+  border-radius: 50%;
+  animation: pupil-movement 4s ease-in-out infinite;
 }
 
 .octopus-eye.left { 
-  left: 20px; 
+  left: 18px; 
 }
 
 .octopus-eye.right { 
-  right: 20px; 
+  right: 18px; 
 }
 
 .tentacle {
   position: absolute;
-  width: 20px;
-  height: 80px;
-  top: 90px;
+  width: 22px;
+  height: 85px;
+  top: 88px;
   transform-origin: top center;
 }
 
 .tentacle-curve {
   width: 100%;
   height: 100%;
-  background: linear-gradient(180deg, #4a90e2 0%, #357abd 50%, #2e5f8a 100%);
-  border-radius: 10px;
-  box-shadow: 0 0 15px rgba(74, 144, 226, 0.4);
+  background: 
+    linear-gradient(90deg, rgba(255, 255, 255, 0.2) 0%, transparent 20%),
+    linear-gradient(180deg, #5ba3f5 0%, #4a90e2 20%, #357abd 50%, #2e5f8a 80%, #1e3a5f 100%);
+  border-radius: 12px;
+  box-shadow: 
+    0 0 20px rgba(74, 144, 226, 0.6),
+    inset 2px 0 8px rgba(255, 255, 255, 0.3),
+    inset -2px 0 8px rgba(0, 0, 0, 0.3);
   position: relative;
+  animation: tentacle-texture 2s ease-in-out infinite alternate;
+}
+
+.tentacle-curve::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    repeating-linear-gradient(
+      180deg,
+      transparent 0px,
+      rgba(255, 255, 255, 0.1) 8px,
+      transparent 16px
+    );
+  border-radius: 12px;
+  animation: sucker-pattern 3s ease-in-out infinite;
 }
 
 .tentacle-curve::after {
@@ -112,60 +194,100 @@
   position: absolute;
   top: 0;
   left: 2px;
-  width: 4px;
+  width: 6px;
   height: 100%;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 2px;
+  background: 
+    linear-gradient(180deg, 
+      rgba(255, 255, 255, 0.6) 0%, 
+      rgba(255, 255, 255, 0.3) 50%, 
+      rgba(255, 255, 255, 0.1) 100%
+    );
+  border-radius: 3px;
+  animation: highlight-flow 2.5s ease-in-out infinite;
 }
 
-/* Tentacle positioning - exactly like the image */
+/* Tentacle positioning with more natural curves */
 .tentacle-1 { 
-  left: -30px; 
-  animation: tentacle-sway-1 3s ease-in-out infinite;
+  left: -32px; 
+  animation: tentacle-sway-1 3.5s ease-in-out infinite;
+  transform: rotate(-30deg);
 }
 
 .tentacle-2 { 
-  left: -10px; 
-  animation: tentacle-sway-2 2.8s ease-in-out infinite;
+  left: -12px; 
+  animation: tentacle-sway-2 3.2s ease-in-out infinite;
+  transform: rotate(-20deg);
 }
 
 .tentacle-3 { 
-  left: 10px; 
-  animation: tentacle-sway-3 3.2s ease-in-out infinite;
+  left: 8px; 
+  animation: tentacle-sway-3 3.8s ease-in-out infinite;
+  transform: rotate(-10deg);
 }
 
 .tentacle-4 { 
-  left: 30px; 
-  animation: tentacle-sway-4 2.9s ease-in-out infinite;
+  left: 28px; 
+  animation: tentacle-sway-4 3.1s ease-in-out infinite;
+  transform: rotate(0deg);
 }
 
 .tentacle-5 { 
-  left: 50px; 
-  animation: tentacle-sway-5 3.1s ease-in-out infinite;
+  left: 48px; 
+  animation: tentacle-sway-5 3.6s ease-in-out infinite;
+  transform: rotate(0deg);
 }
 
 .tentacle-6 { 
-  left: 70px; 
-  animation: tentacle-sway-6 2.7s ease-in-out infinite;
+  left: 68px; 
+  animation: tentacle-sway-6 2.9s ease-in-out infinite;
+  transform: rotate(10deg);
 }
 
 .tentacle-7 { 
-  left: 90px; 
-  animation: tentacle-sway-7 3.3s ease-in-out infinite;
+  left: 88px; 
+  animation: tentacle-sway-7 3.4s ease-in-out infinite;
+  transform: rotate(20deg);
 }
 
 .tentacle-8 { 
-  left: 110px; 
-  animation: tentacle-sway-8 2.6s ease-in-out infinite;
+  left: 108px; 
+  animation: tentacle-sway-8 2.8s ease-in-out infinite;
+  transform: rotate(30deg);
 }
 
-/* Animations */
+/* Enhanced Animations */
 @keyframes octopus-float {
   0%, 100% { 
-    transform: translateY(0) scale(1); 
+    transform: translateY(0) scale(1) rotate(0deg); 
+  }
+  25% { 
+    transform: translateY(-8px) scale(1.01) rotate(0.5deg); 
   }
   50% { 
-    transform: translateY(-10px) scale(1.02); 
+    transform: translateY(-12px) scale(1.02) rotate(0deg); 
+  }
+  75% { 
+    transform: translateY(-8px) scale(1.01) rotate(-0.5deg); 
+  }
+}
+
+@keyframes head-breathing {
+  0%, 100% { 
+    transform: scale(1); 
+  }
+  50% { 
+    transform: scale(1.03); 
+  }
+}
+
+@keyframes surface-ripple {
+  0%, 100% { 
+    opacity: 0.8; 
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 1; 
+    transform: scale(1.05);
   }
 }
 
@@ -176,7 +298,7 @@
   }
   100% { 
     opacity: 1; 
-    filter: drop-shadow(0 0 15px #00bfff);
+    filter: drop-shadow(0 0 20px #00bfff);
   }
 }
 
@@ -184,111 +306,208 @@
   0%, 100% { 
     transform: scale(1); 
     opacity: 0.8; 
+    filter: drop-shadow(0 0 8px #00bfff);
   }
   50% { 
-    transform: scale(1.5); 
+    transform: scale(1.8); 
     opacity: 1; 
+    filter: drop-shadow(0 0 15px #00bfff);
   }
 }
 
 @keyframes small-node-blink {
   0%, 100% { 
     opacity: 0.4; 
+    transform: scale(1);
   }
   50% { 
     opacity: 1; 
+    transform: scale(1.3);
   }
 }
 
 @keyframes highlight-shimmer {
   0%, 100% { 
-    opacity: 0.6; 
-    transform: rotate(-20deg) scale(1);
+    opacity: 0.7; 
+    transform: rotate(-25deg) scale(1);
   }
   50% { 
-    opacity: 0.9; 
-    transform: rotate(-20deg) scale(1.1);
+    opacity: 1; 
+    transform: rotate(-25deg) scale(1.15);
+  }
+}
+
+@keyframes micro-highlight {
+  0%, 100% { 
+    opacity: 0.6; 
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 1; 
+    transform: scale(1.2);
   }
 }
 
 @keyframes eye-glow {
   0% { 
-    box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+    box-shadow: 
+      0 0 15px rgba(255, 255, 255, 0.6),
+      inset 0 0 8px rgba(0, 191, 255, 0.2);
   }
   100% { 
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+    box-shadow: 
+      0 0 25px rgba(255, 255, 255, 1),
+      inset 0 0 15px rgba(0, 191, 255, 0.4);
+  }
+}
+
+@keyframes pupil-movement {
+  0%, 100% { 
+    transform: translate(0, 0); 
+  }
+  25% { 
+    transform: translate(2px, -1px); 
+  }
+  50% { 
+    transform: translate(-1px, 1px); 
+  }
+  75% { 
+    transform: translate(1px, -2px); 
+  }
+}
+
+@keyframes tentacle-texture {
+  0% { 
+    filter: brightness(1) contrast(1);
+  }
+  100% { 
+    filter: brightness(1.1) contrast(1.1);
+  }
+}
+
+@keyframes sucker-pattern {
+  0%, 100% { 
+    opacity: 0.3; 
+  }
+  50% { 
+    opacity: 0.6; 
+  }
+}
+
+@keyframes highlight-flow {
+  0% { 
+    transform: translateY(0) scaleY(1);
+    opacity: 0.6;
+  }
+  50% { 
+    transform: translateY(-5px) scaleY(1.1);
+    opacity: 0.8;
+  }
+  100% { 
+    transform: translateY(0) scaleY(1);
+    opacity: 0.6;
   }
 }
 
 @keyframes tentacle-sway-1 {
   0%, 100% { 
-    transform: rotate(-25deg) translateY(0); 
+    transform: rotate(-30deg) translateY(0) scaleX(1); 
+  }
+  25% { 
+    transform: rotate(-25deg) translateY(-6px) scaleX(1.02); 
   }
   50% { 
-    transform: rotate(-15deg) translateY(-5px); 
+    transform: rotate(-20deg) translateY(-8px) scaleX(1.05); 
+  }
+  75% { 
+    transform: rotate(-25deg) translateY(-4px) scaleX(1.02); 
   }
 }
 
 @keyframes tentacle-sway-2 {
   0%, 100% { 
-    transform: rotate(-15deg) translateY(0); 
+    transform: rotate(-20deg) translateY(0) scaleX(1); 
   }
-  50% { 
-    transform: rotate(-5deg) translateY(-3px); 
+  33% { 
+    transform: rotate(-15deg) translateY(-5px) scaleX(1.03); 
+  }
+  66% { 
+    transform: rotate(-10deg) translateY(-7px) scaleX(1.04); 
   }
 }
 
 @keyframes tentacle-sway-3 {
   0%, 100% { 
-    transform: rotate(-5deg) translateY(0); 
+    transform: rotate(-10deg) translateY(0) scaleX(1); 
   }
-  50% { 
-    transform: rotate(5deg) translateY(-4px); 
+  40% { 
+    transform: rotate(-5deg) translateY(-6px) scaleX(1.02); 
+  }
+  80% { 
+    transform: rotate(0deg) translateY(-9px) scaleX(1.05); 
   }
 }
 
 @keyframes tentacle-sway-4 {
   0%, 100% { 
-    transform: rotate(5deg) translateY(0); 
+    transform: rotate(0deg) translateY(0) scaleX(1); 
   }
-  50% { 
-    transform: rotate(-5deg) translateY(-6px); 
+  30% { 
+    transform: rotate(-5deg) translateY(-8px) scaleX(1.04); 
+  }
+  70% { 
+    transform: rotate(5deg) translateY(-10px) scaleX(1.06); 
   }
 }
 
 @keyframes tentacle-sway-5 {
   0%, 100% { 
-    transform: rotate(5deg) translateY(0); 
+    transform: rotate(0deg) translateY(0) scaleX(1); 
   }
-  50% { 
-    transform: rotate(15deg) translateY(-6px); 
+  35% { 
+    transform: rotate(5deg) translateY(-8px) scaleX(1.04); 
+  }
+  65% { 
+    transform: rotate(-5deg) translateY(-10px) scaleX(1.06); 
   }
 }
 
 @keyframes tentacle-sway-6 {
   0%, 100% { 
-    transform: rotate(15deg) translateY(0); 
+    transform: rotate(10deg) translateY(0) scaleX(1); 
   }
-  50% { 
-    transform: rotate(5deg) translateY(-4px); 
+  40% { 
+    transform: rotate(5deg) translateY(-6px) scaleX(1.02); 
+  }
+  80% { 
+    transform: rotate(15deg) translateY(-9px) scaleX(1.05); 
   }
 }
 
 @keyframes tentacle-sway-7 {
   0%, 100% { 
-    transform: rotate(25deg) translateY(0); 
+    transform: rotate(20deg) translateY(0) scaleX(1); 
   }
-  50% { 
-    transform: rotate(15deg) translateY(-3px); 
+  33% { 
+    transform: rotate(15deg) translateY(-5px) scaleX(1.03); 
+  }
+  66% { 
+    transform: rotate(25deg) translateY(-7px) scaleX(1.04); 
   }
 }
 
 @keyframes tentacle-sway-8 {
   0%, 100% { 
-    transform: rotate(35deg) translateY(0); 
+    transform: rotate(30deg) translateY(0) scaleX(1); 
+  }
+  25% { 
+    transform: rotate(25deg) translateY(-6px) scaleX(1.02); 
   }
   50% { 
-    transform: rotate(25deg) translateY(-5px); 
+    transform: rotate(35deg) translateY(-8px) scaleX(1.05); 
+  }
+  75% { 
+    transform: rotate(30deg) translateY(-4px) scaleX(1.02); 
   }
 }
 
@@ -305,8 +524,21 @@
   }
   
   .tentacle {
-    width: 16px;
-    height: 60px;
-    top: 70px;
+    width: 18px;
+    height: 65px;
+    top: 68px;
+  }
+  
+  .octopus-eye {
+    width: 18px;
+    height: 11px;
+    top: 28px;
+  }
+  
+  .head-highlight {
+    width: 35px;
+    height: 20px;
+    top: 12px;
+    left: 16px;
   }
 }
